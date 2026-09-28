@@ -10,18 +10,16 @@ An Unreal Engine martial arts action game built around **reversing commitment**.
 - Leg impairment slows movement. Health, attack timings, ranges, and recovery are exposed to Blueprints for tuning.
 - A simple, predictable rival AI for testing reads and timing.
 
-This is a **code prototype**, not a finished playable level. There are no character models, animations, VFX, UI, map, or packaged build yet. Unreal Editor is required to compile and set up the test level. The C++ editor target compiled successfully in Unreal Engine 5.8 on Windows. Play feel still needs a Blueprint level, characters, and animation.
+This is a **gray-box combat prototype**, not a finished game. `Content/Maps/PrototypeDuel` is a test arena with block fighters, a simple training rival, status labels, and a controls HUD. There are no authored combat animations, VFX, sound effects, or packaged build yet. The C++ editor target was compiled in Unreal Engine 5.8 on Windows; the playable arena needs a fresh build of the current source.
 
 ## Open it in Unreal
 
-1. Install a recent Unreal Engine 5 release with C++ tooling on Windows. Open `COMMITTED.uproject` and let the editor generate and compile the project files.
-2. Create a new Basic level with a floor and lighting. Save it under `Content/Maps/PrototypeDuel` and set it as the editor and game startup map in Project Settings.
-3. Create a Blueprint child of `CommittedFighterCharacter` named `BP_Player`. Assign a mannequin skeletal mesh and animation blueprint. Set this Blueprint as the Default Pawn Class in a Blueprint child of `CommittedGameMode`, then set that Game Mode in World Settings. The camera and combat component already exist on the C++ class.
-4. Place another `BP_Player` child in the level as `BP_Rival`. Set `Prototype Rival AI` to true and `Auto Possess AI` to Placed in World or Spawned. The rival will approach and use simple strikes.
-5. Add visual reactions to `Combat` events `OnCombatStateChanged` and `OnHitReceived` in the Blueprints. For early timing tests, use distinct material colors or `Print String` for Startup, Active, Recovery, Reversal, Staggered, and Defeated. Animation and VFX should follow these state events rather than determine hit timing in this first test.
-6. Press Play. Use WASD and mouse; left click is quick strike, right click is limb strike, Q is committed strike, and E is reversal. Gamepad mappings are in `Config/DefaultInput.ini`.
+1. Open `COMMITTED.uproject` in Unreal Engine 5.8 with Windows C++ tooling installed. Let Unreal compile the editor target after pulling new source.
+2. Open `Content/Maps/PrototypeDuel` if another level is showing. The project's startup map is the duel arena for new editor sessions; the open Untitled landscape is a separate level.
+3. Press **Play**. Use WASD and mouse; left click is quick strike, right click is limb strike, Q is the risky committed strike, and E is a timed reversal. The HUD displays these controls. Gamepad mappings are in `Config/DefaultInput.ini`.
+4. Read the rival's state label. Reversal has a short front-facing window; a missed attempt leaves recovery. Restart Play to reset the duel.
 
-The default game mode spawns the raw C++ fighter if no Blueprint Game Mode is selected. It has no mesh; use the Blueprint setup above to see characters.
+The fighters are block figures for testing timing and spacing. The rival is spawned by `CommittedGameMode` only in `PrototypeDuel`, so other levels are free to use their own encounters. Build and reopen the editor after C++ changes; an editor session already running does not automatically load a newly compiled module.
 
 ## Combat rules to validate
 

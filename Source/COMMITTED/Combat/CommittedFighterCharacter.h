@@ -7,6 +7,8 @@
 
 class USpringArmComponent;
 class UCameraComponent;
+class UStaticMeshComponent;
+class UTextRenderComponent;
 
 UCLASS(Blueprintable)
 class COMMITTED_API ACommittedFighterCharacter : public ACharacter
@@ -25,6 +27,12 @@ public:
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="COMMITTED")
     TObjectPtr<UCameraComponent> FollowCamera;
 
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="COMMITTED|Prototype")
+    TObjectPtr<UStaticMeshComponent> PrototypeBody;
+
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="COMMITTED|Prototype")
+    TObjectPtr<UTextRenderComponent> PrototypeLabel;
+
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="COMMITTED|Prototype")
     bool bPrototypeRivalAI = false;
 
@@ -42,6 +50,9 @@ public:
 
 protected:
     virtual void BeginPlay() override;
+
+    UFUNCTION()
+    void RefreshPrototypeLabel(ECommittedCombatState NewState, FName MoveName);
 
 private:
     float RivalDecisionTime = 0.f;

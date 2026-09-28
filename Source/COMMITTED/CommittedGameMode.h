@@ -11,4 +11,7 @@ class COMMITTED_API ACommittedGameMode : public AGameModeBase
 
 public:
     ACommittedGameMode();
+
+protected:
+    virtual void BeginPlay() override;
 };

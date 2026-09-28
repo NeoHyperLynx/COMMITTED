@@ -1,5 +1,9 @@
 #include "CommittedFighterCharacter.h"
 #include "Camera/CameraComponent.h"
+#include "Components/CapsuleComponent.h"
+#include "Components/StaticMeshComponent.h"
+#include "Components/TextRenderComponent.h"
+#include "Materials/MaterialInstanceDynamic.h"
 #include "Components/InputComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/PlayerController.h"
@@ -17,6 +21,36 @@ ACommittedFighterCharacter::ACommittedFighterCharacter()
     FollowCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("FollowCamera"));
     FollowCamera->SetupAttachment(CameraBoom, USpringArmComponent::SocketName);
     FollowCamera->bUsePawnControlRotation = false;
+
+    UStaticMesh* Block = LoadObject<UStaticMesh>(nullptr, TEXT("/Engine/BasicShapes/Cube.Cube"));
+    UStaticMesh* Sphere = LoadObject<UStaticMesh>(nullptr, TEXT("/Engine/BasicShapes/Sphere.Sphere"));
+    auto AddPart = [this, Block](FName Name, FVector Position, FVector Scale)
+    {
+        UStaticMeshComponent* Part = CreateDefaultSubobject<UStaticMeshComponent>(Name);
+        Part->SetupAttachment(GetCapsuleComponent());
+        Part->SetStaticMesh(Block);
+        Part->SetRelativeLocation(Position);
+        Part->SetRelativeScale3D(Scale);
+        Part->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+        return Part;
+    };
+    PrototypeBody = AddPart(TEXT("PrototypeBody"), FVector::ZeroVector, FVector(0.48f, 0.35f, 1.0f));
+    AddPart(TEXT("LeftArm"), FVector(0.f, -34.f, 5.f), FVector(0.14f, 0.14f, 0.72f));
+    AddPart(TEXT("RightArm"), FVector(0.f, 34.f, 5.f), FVector(0.14f, 0.14f, 0.72f));
+    AddPart(TEXT("LeftLeg"), FVector(0.f, -17.f, -55.f), FVector(0.18f, 0.18f, 0.72f));
+    AddPart(TEXT("RightLeg"), FVector(0.f, 17.f, -55.f), FVector(0.18f, 0.18f, 0.72f));
+    UStaticMeshComponent* Head = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("PrototypeHead"));
+    Head->SetupAttachment(GetCapsuleComponent());
+    Head->SetStaticMesh(Sphere);
+    Head->SetRelativeLocation(FVector(0.f, 0.f, 75.f));
+    Head->SetRelativeScale3D(FVector(0.32f));
+    Head->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+    PrototypeLabel = CreateDefaultSubobject<UTextRenderComponent>(TEXT("PrototypeLabel"));
+    PrototypeLabel->SetupAttachment(GetCapsuleComponent());
+    PrototypeLabel->SetRelativeLocation(FVector(0.f, 0.f, 126.f));
+    PrototypeLabel->SetHorizontalAlignment(EHTA_Center);
+    PrototypeLabel->SetWorldSize(28.f);
+    PrototypeLabel->SetText(FText::FromString(TEXT("FIGHTER")));
 
     bUseControllerRotationYaw = false;
     GetCharacterMovement()->bOrientRotationToMovement = true;
@@ -48,12 +82,37 @@ ACommittedFighterCharacter::ACommittedFighterCharacter()
 void ACommittedFighterCharacter::BeginPlay()
 {
     Super::BeginPlay();
+    if (UMaterialInterface* BaseMaterial = PrototypeBody->GetMaterial(0))
+    {
+        UMaterialInstanceDynamic* Tint = UMaterialInstanceDynamic::Create(BaseMaterial, this);
+        const FLinearColor Color = bPrototypeRivalAI ? FLinearColor(0.9f, 0.16f, 0.09f)
+            : FLinearColor(0.06f, 0.65f, 0.95f);
+        Tint->SetVectorParameterValue(TEXT("Color"), Color);
+        Tint->SetVectorParameterValue(TEXT("BaseColor"), Color);
+        TArray<UStaticMeshComponent*> Parts;
+        GetComponents(Parts);
+        for (UStaticMeshComponent* Part : Parts) Part->SetMaterial(0, Tint);
+    }
+    Combat->OnCombatStateChanged.AddDynamic(this, &ACommittedFighterCharacter::RefreshPrototypeLabel);
+    RefreshPrototypeLabel(Combat->State, NAME_None);
     if (bPrototypeRivalAI)
     {
         if (!Controller) SpawnDefaultController();
         CameraBoom->Deactivate();
         FollowCamera->Deactivate();
     }
+}
+
+void ACommittedFighterCharacter::RefreshPrototypeLabel(ECommittedCombatState NewState, FName MoveName)
+{
+    const FString StateName = StaticEnum<ECommittedCombatState>()->GetNameStringByValue(
+        static_cast<int64>(NewState));
+    PrototypeLabel->SetText(FText::FromString(FString::Printf(TEXT("%s  %.0f HP  |  %s"),
+        bPrototypeRivalAI ? TEXT("RIVAL") : TEXT("YOU"), Combat->Health, *StateName)));
+    const FColor Base = bPrototypeRivalAI ? FColor(255, 95, 65) : FColor(65, 220, 255);
+    PrototypeLabel->SetTextRenderColor(NewState == ECommittedCombatState::Reversal ? FColor::Green :
+        NewState == ECommittedCombatState::Startup ? FColor::Yellow :
+        NewState == ECommittedCombatState::Defeated ? FColor::Red : Base);
 }
 
 void ACommittedFighterCharacter::MoveForward(float Value)

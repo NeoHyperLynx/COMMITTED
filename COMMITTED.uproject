@@ -4,5 +4,8 @@
   "Description": "A martial arts action game built around reading and reversing commitment.",
   "Modules": [
     { "Name": "COMMITTED", "Type": "Runtime", "LoadingPhase": "Default" }
+  ],
+  "Plugins": [
+    { "Name": "PythonScriptPlugin", "Enabled": true }
   ]
 }
