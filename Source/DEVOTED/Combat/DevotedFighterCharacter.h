@@ -2,7 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
-#include "Combat/DevotedCombatComponent.h"
+#include "DevotedCombatComponent.h"
 #include "DevotedFighterCharacter.generated.h"
 
 class USpringArmComponent;

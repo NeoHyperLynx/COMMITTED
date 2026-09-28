@@ -1,5 +1,6 @@
-#include "Combat/DevotedCombatComponent.h"
+#include "DevotedCombatComponent.h"
 #include "Engine/World.h"
+#include "Engine/OverlapResult.h"
 #include "CollisionQueryParams.h"
 #include "TimerManager.h"
 
