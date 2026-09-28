@@ -3,6 +3,6 @@
   "Category": "Games",
   "Description": "A martial arts action game built around reading and reversing commitment.",
   "Modules": [
-    { "Name": "DEVOTED", "Type": "Runtime", "LoadingPhase": "Default" }
+    { "Name": "COMMITTED", "Type": "Runtime", "LoadingPhase": "Default" }
   ]
 }

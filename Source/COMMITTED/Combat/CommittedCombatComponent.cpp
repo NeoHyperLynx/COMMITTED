@@ -1,29 +1,29 @@
-#include "DevotedCombatComponent.h"
+#include "CommittedCombatComponent.h"
 #include "Engine/World.h"
 #include "Engine/OverlapResult.h"
 #include "CollisionQueryParams.h"
 #include "TimerManager.h"
 
-UDevotedCombatComponent::UDevotedCombatComponent()
+UCommittedCombatComponent::UCommittedCombatComponent()
 {
     PrimaryComponentTick.bCanEverTick = true;
 }
 
-void UDevotedCombatComponent::BeginPlay()
+void UCommittedCombatComponent::BeginPlay()
 {
     Super::BeginPlay();
     Health = MaxHealth;
 }
 
-void UDevotedCombatComponent::SetState(EDevotedCombatState NewState)
+void UCommittedCombatComponent::SetState(ECommittedCombatState NewState)
 {
     State = NewState;
     OnCombatStateChanged.Broadcast(State, CurrentAttack.Name);
 }
 
-bool UDevotedCombatComponent::StartAttack(const FDevotedAttack& Attack)
+bool UCommittedCombatComponent::StartAttack(const FCommittedAttack& Attack)
 {
-    if (State != EDevotedCombatState::Ready || !GetWorld() ||
+    if (State != ECommittedCombatState::Ready || !GetWorld() ||
         Attack.StartupSeconds <= 0.f || Attack.ActiveSeconds <= 0.f ||
         Attack.RecoverySeconds <= 0.f || Attack.Range <= 0.f)
     {
@@ -32,75 +32,75 @@ bool UDevotedCombatComponent::StartAttack(const FDevotedAttack& Attack)
 
     CurrentAttack = Attack;
     HitThisAttack.Reset();
-    SetState(EDevotedCombatState::Startup);
+    SetState(ECommittedCombatState::Startup);
     GetWorld()->GetTimerManager().SetTimer(PhaseTimer, this,
-        &UDevotedCombatComponent::EnterActive, Attack.StartupSeconds, false);
+        &UCommittedCombatComponent::EnterActive, Attack.StartupSeconds, false);
     return true;
 }
 
-void UDevotedCombatComponent::EnterActive()
+void UCommittedCombatComponent::EnterActive()
 {
-    SetState(EDevotedCombatState::Active);
+    SetState(ECommittedCombatState::Active);
     GetWorld()->GetTimerManager().SetTimer(PhaseTimer, this,
-        &UDevotedCombatComponent::EnterRecovery, CurrentAttack.ActiveSeconds, false);
+        &UCommittedCombatComponent::EnterRecovery, CurrentAttack.ActiveSeconds, false);
     ScanForTargets();
 }
 
-void UDevotedCombatComponent::EnterRecovery()
+void UCommittedCombatComponent::EnterRecovery()
 {
-    SetState(EDevotedCombatState::Recovery);
+    SetState(ECommittedCombatState::Recovery);
     GetWorld()->GetTimerManager().SetTimer(PhaseTimer, this,
-        &UDevotedCombatComponent::EnterReady, CurrentAttack.RecoverySeconds, false);
+        &UCommittedCombatComponent::EnterReady, CurrentAttack.RecoverySeconds, false);
 }
 
-void UDevotedCombatComponent::EnterReady()
+void UCommittedCombatComponent::EnterReady()
 {
-    CurrentAttack = FDevotedAttack();
-    SetState(EDevotedCombatState::Ready);
+    CurrentAttack = FCommittedAttack();
+    SetState(ECommittedCombatState::Ready);
 }
 
-bool UDevotedCombatComponent::StartReversal()
+bool UCommittedCombatComponent::StartReversal()
 {
-    if (State != EDevotedCombatState::Ready || !GetWorld())
+    if (State != ECommittedCombatState::Ready || !GetWorld())
     {
         return false;
     }
 
-    SetState(EDevotedCombatState::Reversal);
+    SetState(ECommittedCombatState::Reversal);
     GetWorld()->GetTimerManager().SetTimer(PhaseTimer, this,
-        &UDevotedCombatComponent::EnterReversalRecovery, ReversalWindowSeconds, false);
+        &UCommittedCombatComponent::EnterReversalRecovery, ReversalWindowSeconds, false);
     return true;
 }
 
-void UDevotedCombatComponent::EnterReversalRecovery()
+void UCommittedCombatComponent::EnterReversalRecovery()
 {
-    SetState(EDevotedCombatState::Recovery);
+    SetState(ECommittedCombatState::Recovery);
     GetWorld()->GetTimerManager().SetTimer(PhaseTimer, this,
-        &UDevotedCombatComponent::EnterReady, ReversalRecoverySeconds, false);
+        &UCommittedCombatComponent::EnterReady, ReversalRecoverySeconds, false);
 }
 
-void UDevotedCombatComponent::Stagger(float Duration)
+void UCommittedCombatComponent::Stagger(float Duration)
 {
-    if (!GetWorld() || State == EDevotedCombatState::Defeated)
+    if (!GetWorld() || State == ECommittedCombatState::Defeated)
     {
         return;
     }
 
     GetWorld()->GetTimerManager().ClearTimer(PhaseTimer);
-    SetState(EDevotedCombatState::Staggered);
+    SetState(ECommittedCombatState::Staggered);
     GetWorld()->GetTimerManager().SetTimer(PhaseTimer, this,
-        &UDevotedCombatComponent::EnterReady, Duration, false);
+        &UCommittedCombatComponent::EnterReady, Duration, false);
 }
 
-void UDevotedCombatComponent::ReceiveAttack(UDevotedCombatComponent* Attacker,
-    const FDevotedAttack& Attack)
+void UCommittedCombatComponent::ReceiveAttack(UCommittedCombatComponent* Attacker,
+    const FCommittedAttack& Attack)
 {
-    if (!Attacker || State == EDevotedCombatState::Defeated)
+    if (!Attacker || State == ECommittedCombatState::Defeated)
     {
         return;
     }
 
-    if (State == EDevotedCombatState::Reversal)
+    if (State == ECommittedCombatState::Reversal)
     {
         const FVector ToAttacker = Attacker->GetOwner()->GetActorLocation() - GetOwner()->GetActorLocation();
         const float Facing = FVector::DotProduct(GetOwner()->GetActorForwardVector().GetSafeNormal2D(),
@@ -119,7 +119,7 @@ void UDevotedCombatComponent::ReceiveAttack(UDevotedCombatComponent* Attacker,
         GetWorld()->GetTimerManager().ClearTimer(PhaseTimer);
     }
     Health = Attack.bLethal ? 0.f : FMath::Max(0.f, Health - Attack.Damage);
-    if (Attack.TargetLimb != EDevotedLimb::None)
+    if (Attack.TargetLimb != ECommittedLimb::None)
     {
         ImpairedLimbs.AddUnique(Attack.TargetLimb);
     }
@@ -127,7 +127,7 @@ void UDevotedCombatComponent::ReceiveAttack(UDevotedCombatComponent* Attacker,
 
     if (Health <= 0.f)
     {
-        SetState(EDevotedCombatState::Defeated);
+        SetState(ECommittedCombatState::Defeated);
     }
     else
     {
@@ -135,15 +135,15 @@ void UDevotedCombatComponent::ReceiveAttack(UDevotedCombatComponent* Attacker,
     }
 }
 
-void UDevotedCombatComponent::ScanForTargets()
+void UCommittedCombatComponent::ScanForTargets()
 {
-    if (State != EDevotedCombatState::Active || !GetWorld() || !GetOwner())
+    if (State != ECommittedCombatState::Active || !GetWorld() || !GetOwner())
     {
         return;
     }
 
     TArray<FOverlapResult> Results;
-    FCollisionQueryParams Params(SCENE_QUERY_STAT(DevotedCombat), false, GetOwner());
+    FCollisionQueryParams Params(SCENE_QUERY_STAT(CommittedCombat), false, GetOwner());
     const FVector Origin = GetOwner()->GetActorLocation();
     GetWorld()->OverlapMultiByObjectType(Results, Origin, FQuat::Identity,
         FCollisionObjectQueryParams(ECC_Pawn),
@@ -157,8 +157,8 @@ void UDevotedCombatComponent::ScanForTargets()
             continue;
         }
 
-        UDevotedCombatComponent* Target = Other->FindComponentByClass<UDevotedCombatComponent>();
-        if (!Target || HitThisAttack.Contains(Target) || Target->State == EDevotedCombatState::Defeated)
+        UCommittedCombatComponent* Target = Other->FindComponentByClass<UCommittedCombatComponent>();
+        if (!Target || HitThisAttack.Contains(Target) || Target->State == ECommittedCombatState::Defeated)
         {
             continue;
         }
@@ -173,21 +173,21 @@ void UDevotedCombatComponent::ScanForTargets()
 
         HitThisAttack.Add(Target);
         Target->ReceiveAttack(this, CurrentAttack);
-        if (State != EDevotedCombatState::Active)
+        if (State != ECommittedCombatState::Active)
         {
             break; // A successful reversal interrupted this attack.
         }
     }
 }
 
-void UDevotedCombatComponent::TickComponent(float DeltaTime, ELevelTick TickType,
+void UCommittedCombatComponent::TickComponent(float DeltaTime, ELevelTick TickType,
     FActorComponentTickFunction* ThisTickFunction)
 {
     Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
     ScanForTargets();
 }
 
-void UDevotedCombatComponent::ResetCombat()
+void UCommittedCombatComponent::ResetCombat()
 {
     if (GetWorld())
     {

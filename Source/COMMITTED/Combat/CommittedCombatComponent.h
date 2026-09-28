@@ -2,22 +2,22 @@
 
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
-#include "DevotedCombatComponent.generated.h"
+#include "CommittedCombatComponent.generated.h"
 
 UENUM(BlueprintType)
-enum class EDevotedCombatState : uint8
+enum class ECommittedCombatState : uint8
 {
     Ready, Startup, Active, Recovery, Reversal, Staggered, Defeated
 };
 
 UENUM(BlueprintType)
-enum class EDevotedLimb : uint8
+enum class ECommittedLimb : uint8
 {
     None, LeftArm, RightArm, LeftLeg, RightLeg
 };
 
 USTRUCT(BlueprintType)
-struct FDevotedAttack
+struct FCommittedAttack
 {
     GENERATED_BODY()
 
@@ -43,61 +43,61 @@ struct FDevotedAttack
     float Damage = 20.f;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Attack")
-    EDevotedLimb TargetLimb = EDevotedLimb::None;
+    ECommittedLimb TargetLimb = ECommittedLimb::None;
 
     // A clean, unreversed hit defeats the opponent. Use this sparingly.
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Attack")
     bool bLethal = false;
 };
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FDevotedCombatEvent, EDevotedCombatState, NewState, FName, MoveName);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FDevotedHitEvent, EDevotedLimb, Limb, bool, bLethal);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FCommittedCombatEvent, ECommittedCombatState, NewState, FName, MoveName);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FCommittedHitEvent, ECommittedLimb, Limb, bool, bLethal);
 
 UCLASS(ClassGroup=(Combat), meta=(BlueprintSpawnableComponent))
-class DEVOTED_API UDevotedCombatComponent : public UActorComponent
+class COMMITTED_API UCommittedCombatComponent : public UActorComponent
 {
     GENERATED_BODY()
 
 public:
-    UDevotedCombatComponent();
+    UCommittedCombatComponent();
 
-    UPROPERTY(BlueprintAssignable, Category="DEVOTED|Combat")
-    FDevotedCombatEvent OnCombatStateChanged;
+    UPROPERTY(BlueprintAssignable, Category="COMMITTED|Combat")
+    FCommittedCombatEvent OnCombatStateChanged;
 
-    UPROPERTY(BlueprintAssignable, Category="DEVOTED|Combat")
-    FDevotedHitEvent OnHitReceived;
+    UPROPERTY(BlueprintAssignable, Category="COMMITTED|Combat")
+    FCommittedHitEvent OnHitReceived;
 
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="DEVOTED|Combat", meta=(ClampMin="1.0"))
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="COMMITTED|Combat", meta=(ClampMin="1.0"))
     float MaxHealth = 100.f;
 
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="DEVOTED|Combat", meta=(ClampMin="0.01"))
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="COMMITTED|Combat", meta=(ClampMin="0.01"))
     float ReversalWindowSeconds = 0.22f;
 
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="DEVOTED|Combat", meta=(ClampMin="0.01"))
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="COMMITTED|Combat", meta=(ClampMin="0.01"))
     float ReversalRecoverySeconds = 0.55f;
 
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="DEVOTED|Combat", meta=(ClampMin="0.01"))
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="COMMITTED|Combat", meta=(ClampMin="0.01"))
     float ReversedAttackerStaggerSeconds = 0.8f;
 
-    UPROPERTY(BlueprintReadOnly, Category="DEVOTED|Combat")
+    UPROPERTY(BlueprintReadOnly, Category="COMMITTED|Combat")
     float Health = 100.f;
 
-    UPROPERTY(BlueprintReadOnly, Category="DEVOTED|Combat")
-    EDevotedCombatState State = EDevotedCombatState::Ready;
+    UPROPERTY(BlueprintReadOnly, Category="COMMITTED|Combat")
+    ECommittedCombatState State = ECommittedCombatState::Ready;
 
-    UPROPERTY(BlueprintReadOnly, Category="DEVOTED|Combat")
-    FDevotedAttack CurrentAttack;
+    UPROPERTY(BlueprintReadOnly, Category="COMMITTED|Combat")
+    FCommittedAttack CurrentAttack;
 
-    UPROPERTY(BlueprintReadOnly, Category="DEVOTED|Combat")
-    TArray<EDevotedLimb> ImpairedLimbs;
+    UPROPERTY(BlueprintReadOnly, Category="COMMITTED|Combat")
+    TArray<ECommittedLimb> ImpairedLimbs;
 
-    UFUNCTION(BlueprintCallable, Category="DEVOTED|Combat")
-    bool StartAttack(const FDevotedAttack& Attack);
+    UFUNCTION(BlueprintCallable, Category="COMMITTED|Combat")
+    bool StartAttack(const FCommittedAttack& Attack);
 
-    UFUNCTION(BlueprintCallable, Category="DEVOTED|Combat")
+    UFUNCTION(BlueprintCallable, Category="COMMITTED|Combat")
     bool StartReversal();
 
-    UFUNCTION(BlueprintCallable, Category="DEVOTED|Combat")
+    UFUNCTION(BlueprintCallable, Category="COMMITTED|Combat")
     void ResetCombat();
 
     virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
@@ -107,14 +107,14 @@ protected:
 
 private:
     FTimerHandle PhaseTimer;
-    TSet<UDevotedCombatComponent*> HitThisAttack;
+    TSet<UCommittedCombatComponent*> HitThisAttack;
 
-    void SetState(EDevotedCombatState NewState);
+    void SetState(ECommittedCombatState NewState);
     void EnterActive();
     void EnterRecovery();
     void EnterReady();
     void EnterReversalRecovery();
     void ScanForTargets();
-    void ReceiveAttack(UDevotedCombatComponent* Attacker, const FDevotedAttack& Attack);
+    void ReceiveAttack(UCommittedCombatComponent* Attacker, const FCommittedAttack& Attack);
     void Stagger(float Duration);
 };

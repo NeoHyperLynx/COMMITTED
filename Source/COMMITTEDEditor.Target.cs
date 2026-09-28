@@ -1,13 +1,13 @@
 using UnrealBuildTool;
 using System.Collections.Generic;
 
-public class DEVOTEDEditorTarget : TargetRules
+public class COMMITTEDEditorTarget : TargetRules
 {
-    public DEVOTEDEditorTarget(TargetInfo Target) : base(Target)
+    public COMMITTEDEditorTarget(TargetInfo Target) : base(Target)
     {
         Type = TargetType.Editor;
         DefaultBuildSettings = BuildSettingsVersion.V7;
         IncludeOrderVersion = EngineIncludeOrderVersion.Unreal5_8;
-        ExtraModuleNames.Add("DEVOTED");
+        ExtraModuleNames.Add("COMMITTED");
     }
 }

@@ -1,4 +1,4 @@
-#include "DevotedFighterCharacter.h"
+#include "CommittedFighterCharacter.h"
 #include "Camera/CameraComponent.h"
 #include "Components/InputComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
@@ -6,10 +6,10 @@
 #include "GameFramework/SpringArmComponent.h"
 #include "Kismet/GameplayStatics.h"
 
-ADevotedFighterCharacter::ADevotedFighterCharacter()
+ACommittedFighterCharacter::ACommittedFighterCharacter()
 {
     PrimaryActorTick.bCanEverTick = true;
-    Combat = CreateDefaultSubobject<UDevotedCombatComponent>(TEXT("Combat"));
+    Combat = CreateDefaultSubobject<UCommittedCombatComponent>(TEXT("Combat"));
     CameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom"));
     CameraBoom->SetupAttachment(RootComponent);
     CameraBoom->TargetArmLength = 380.f;
@@ -34,7 +34,7 @@ ADevotedFighterCharacter::ADevotedFighterCharacter()
     LimbStrike.ActiveSeconds = 0.14f;
     LimbStrike.RecoverySeconds = 0.48f;
     LimbStrike.Damage = 18.f;
-    LimbStrike.TargetLimb = EDevotedLimb::LeftLeg;
+    LimbStrike.TargetLimb = ECommittedLimb::LeftLeg;
 
     CommittedStrike.Name = TEXT("Committed strike");
     CommittedStrike.StartupSeconds = 0.85f;
@@ -45,7 +45,7 @@ ADevotedFighterCharacter::ADevotedFighterCharacter()
     CommittedStrike.bLethal = true;
 }
 
-void ADevotedFighterCharacter::BeginPlay()
+void ACommittedFighterCharacter::BeginPlay()
 {
     Super::BeginPlay();
     if (bPrototypeRivalAI)
@@ -56,58 +56,58 @@ void ADevotedFighterCharacter::BeginPlay()
     }
 }
 
-void ADevotedFighterCharacter::MoveForward(float Value)
+void ACommittedFighterCharacter::MoveForward(float Value)
 {
-    if (Combat->State != EDevotedCombatState::Ready || FMath::IsNearlyZero(Value)) return;
+    if (Combat->State != ECommittedCombatState::Ready || FMath::IsNearlyZero(Value)) return;
     const FRotator Yaw(0.f, Controller ? Controller->GetControlRotation().Yaw : GetActorRotation().Yaw, 0.f);
     AddMovementInput(FRotationMatrix(Yaw).GetUnitAxis(EAxis::X), Value);
 }
 
-void ADevotedFighterCharacter::MoveRight(float Value)
+void ACommittedFighterCharacter::MoveRight(float Value)
 {
-    if (Combat->State != EDevotedCombatState::Ready || FMath::IsNearlyZero(Value)) return;
+    if (Combat->State != ECommittedCombatState::Ready || FMath::IsNearlyZero(Value)) return;
     const FRotator Yaw(0.f, Controller ? Controller->GetControlRotation().Yaw : GetActorRotation().Yaw, 0.f);
     AddMovementInput(FRotationMatrix(Yaw).GetUnitAxis(EAxis::Y), Value);
 }
 
-void ADevotedFighterCharacter::Turn(float Value) { AddControllerYawInput(Value); }
-void ADevotedFighterCharacter::LookUp(float Value) { AddControllerPitchInput(Value); }
-void ADevotedFighterCharacter::DoLightAttack() { Combat->StartAttack(LightAttack); }
-void ADevotedFighterCharacter::DoLimbStrike() { Combat->StartAttack(LimbStrike); }
-void ADevotedFighterCharacter::DoCommittedStrike() { Combat->StartAttack(CommittedStrike); }
-void ADevotedFighterCharacter::DoReversal() { Combat->StartReversal(); }
+void ACommittedFighterCharacter::Turn(float Value) { AddControllerYawInput(Value); }
+void ACommittedFighterCharacter::LookUp(float Value) { AddControllerPitchInput(Value); }
+void ACommittedFighterCharacter::DoLightAttack() { Combat->StartAttack(LightAttack); }
+void ACommittedFighterCharacter::DoLimbStrike() { Combat->StartAttack(LimbStrike); }
+void ACommittedFighterCharacter::DoCommittedStrike() { Combat->StartAttack(CommittedStrike); }
+void ACommittedFighterCharacter::DoReversal() { Combat->StartReversal(); }
 
-void ADevotedFighterCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
+void ACommittedFighterCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
     Super::SetupPlayerInputComponent(PlayerInputComponent);
-    PlayerInputComponent->BindAxis(TEXT("MoveForward"), this, &ADevotedFighterCharacter::MoveForward);
-    PlayerInputComponent->BindAxis(TEXT("MoveRight"), this, &ADevotedFighterCharacter::MoveRight);
-    PlayerInputComponent->BindAxis(TEXT("Turn"), this, &ADevotedFighterCharacter::Turn);
-    PlayerInputComponent->BindAxis(TEXT("LookUp"), this, &ADevotedFighterCharacter::LookUp);
-    PlayerInputComponent->BindAction(TEXT("LightAttack"), IE_Pressed, this, &ADevotedFighterCharacter::DoLightAttack);
-    PlayerInputComponent->BindAction(TEXT("LimbStrike"), IE_Pressed, this, &ADevotedFighterCharacter::DoLimbStrike);
-    PlayerInputComponent->BindAction(TEXT("CommittedStrike"), IE_Pressed, this, &ADevotedFighterCharacter::DoCommittedStrike);
-    PlayerInputComponent->BindAction(TEXT("Reversal"), IE_Pressed, this, &ADevotedFighterCharacter::DoReversal);
+    PlayerInputComponent->BindAxis(TEXT("MoveForward"), this, &ACommittedFighterCharacter::MoveForward);
+    PlayerInputComponent->BindAxis(TEXT("MoveRight"), this, &ACommittedFighterCharacter::MoveRight);
+    PlayerInputComponent->BindAxis(TEXT("Turn"), this, &ACommittedFighterCharacter::Turn);
+    PlayerInputComponent->BindAxis(TEXT("LookUp"), this, &ACommittedFighterCharacter::LookUp);
+    PlayerInputComponent->BindAction(TEXT("LightAttack"), IE_Pressed, this, &ACommittedFighterCharacter::DoLightAttack);
+    PlayerInputComponent->BindAction(TEXT("LimbStrike"), IE_Pressed, this, &ACommittedFighterCharacter::DoLimbStrike);
+    PlayerInputComponent->BindAction(TEXT("CommittedStrike"), IE_Pressed, this, &ACommittedFighterCharacter::DoCommittedStrike);
+    PlayerInputComponent->BindAction(TEXT("Reversal"), IE_Pressed, this, &ACommittedFighterCharacter::DoReversal);
 }
 
-void ADevotedFighterCharacter::Tick(float DeltaSeconds)
+void ACommittedFighterCharacter::Tick(float DeltaSeconds)
 {
     Super::Tick(DeltaSeconds);
-    const bool bLegImpaired = Combat->ImpairedLimbs.Contains(EDevotedLimb::LeftLeg) ||
-        Combat->ImpairedLimbs.Contains(EDevotedLimb::RightLeg);
+    const bool bLegImpaired = Combat->ImpairedLimbs.Contains(ECommittedLimb::LeftLeg) ||
+        Combat->ImpairedLimbs.Contains(ECommittedLimb::RightLeg);
     GetCharacterMovement()->MaxWalkSpeed = bLegImpaired ? 300.f : 480.f;
-    if (!bPrototypeRivalAI || Combat->State == EDevotedCombatState::Defeated) return;
+    if (!bPrototypeRivalAI || Combat->State == ECommittedCombatState::Defeated) return;
 
     ACharacter* Player = UGameplayStatics::GetPlayerCharacter(this, 0);
     if (!Player || Player == this) return;
     const FVector Delta = Player->GetActorLocation() - GetActorLocation();
     const float Distance = Delta.Size2D();
-    if (Combat->State == EDevotedCombatState::Ready && Distance > 1.f)
+    if (Combat->State == ECommittedCombatState::Ready && Distance > 1.f)
     {
         SetActorRotation(FRotator(0.f, Delta.Rotation().Yaw, 0.f));
     }
 
-    if (Combat->State != EDevotedCombatState::Ready) return;
+    if (Combat->State != ECommittedCombatState::Ready) return;
     RivalDecisionTime -= DeltaSeconds;
     if (Distance > 130.f && Distance < 900.f)
     {
@@ -117,9 +117,9 @@ void ADevotedFighterCharacter::Tick(float DeltaSeconds)
 
     // A predictable training rival: its attacks are intentionally readable.
     RivalDecisionTime = 1.25f;
-    if (UDevotedCombatComponent* PlayerCombat = Player->FindComponentByClass<UDevotedCombatComponent>())
+    if (UCommittedCombatComponent* PlayerCombat = Player->FindComponentByClass<UCommittedCombatComponent>())
     {
-        if (PlayerCombat->State == EDevotedCombatState::Startup)
+        if (PlayerCombat->State == ECommittedCombatState::Startup)
         {
             Combat->StartReversal();
             return;

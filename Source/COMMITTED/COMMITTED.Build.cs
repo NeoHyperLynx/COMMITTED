@@ -1,8 +1,8 @@
 using UnrealBuildTool;
 
-public class DEVOTED : ModuleRules
+public class COMMITTED : ModuleRules
 {
-    public DEVOTED(ReadOnlyTargetRules Target) : base(Target)
+    public COMMITTED(ReadOnlyTargetRules Target) : base(Target)
     {
         PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
         PublicDependencyModuleNames.AddRange(new[] { "Core", "CoreUObject", "Engine", "InputCore" });

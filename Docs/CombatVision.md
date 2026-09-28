@@ -1,4 +1,4 @@
-# DEVOTED — first combat slice
+# COMMITTED — first combat slice
 
 ## Promise
 

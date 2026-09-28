@@ -1,4 +1,4 @@
-# DEVOTED
+# COMMITTED
 
 An Unreal Engine martial arts action game built around **reversing commitment**. This repository is at the first gray-box combat prototype stage. The first goal is one player, one rival, and a fight whose outcome can change through a well-timed, directional reversal.
 
@@ -10,13 +10,13 @@ An Unreal Engine martial arts action game built around **reversing commitment**.
 - Leg impairment slows movement. Health, attack timings, ranges, and recovery are exposed to Blueprints for tuning.
 - A simple, predictable rival AI for testing reads and timing.
 
-This is a **code prototype**, not a finished playable level. There are no character models, animations, VFX, UI, map, or packaged build yet. Unreal Editor is required to compile and set up the test level. Source compilation and play feel have not been verified in this workspace because Unreal Editor is unavailable here.
+This is a **code prototype**, not a finished playable level. There are no character models, animations, VFX, UI, map, or packaged build yet. Unreal Editor is required to compile and set up the test level. The C++ editor target compiled successfully in Unreal Engine 5.8 on Windows. Play feel still needs a Blueprint level, characters, and animation.
 
 ## Open it in Unreal
 
-1. Install a recent Unreal Engine 5 release with C++ tooling on Windows. Open `DEVOTED.uproject` and let the editor generate and compile the project files.
+1. Install a recent Unreal Engine 5 release with C++ tooling on Windows. Open `COMMITTED.uproject` and let the editor generate and compile the project files.
 2. Create a new Basic level with a floor and lighting. Save it under `Content/Maps/PrototypeDuel` and set it as the editor and game startup map in Project Settings.
-3. Create a Blueprint child of `DevotedFighterCharacter` named `BP_Player`. Assign a mannequin skeletal mesh and animation blueprint. Set this Blueprint as the Default Pawn Class in a Blueprint child of `DevotedGameMode`, then set that Game Mode in World Settings. The camera and combat component already exist on the C++ class.
+3. Create a Blueprint child of `CommittedFighterCharacter` named `BP_Player`. Assign a mannequin skeletal mesh and animation blueprint. Set this Blueprint as the Default Pawn Class in a Blueprint child of `CommittedGameMode`, then set that Game Mode in World Settings. The camera and combat component already exist on the C++ class.
 4. Place another `BP_Player` child in the level as `BP_Rival`. Set `Prototype Rival AI` to true and `Auto Possess AI` to Placed in World or Spawned. The rival will approach and use simple strikes.
 5. Add visual reactions to `Combat` events `OnCombatStateChanged` and `OnHitReceived` in the Blueprints. For early timing tests, use distinct material colors or `Print String` for Startup, Active, Recovery, Reversal, Staggered, and Defeated. Animation and VFX should follow these state events rather than determine hit timing in this first test.
 6. Press Play. Use WASD and mouse; left click is quick strike, right click is limb strike, Q is committed strike, and E is reversal. Gamepad mappings are in `Config/DefaultInput.ini`.
