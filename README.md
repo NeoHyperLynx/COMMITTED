@@ -29,6 +29,20 @@ The fighters are block figures for testing timing and spacing. The rival is spaw
 4. A reverse at the correct time should interrupt the attack and leave a follow-up opportunity.
 5. The same timing rules must later survive a shift from third-person play to a side-view duel.
 
+## Choreographed combat feel
+
+The target is a playable martial-arts exchange that feels choreographed around player decisions, taking visual inspiration from the New Virtua Fighter Project reference: https://www.youtube.com/watch?v=XcdGjc6FLOo. This is a desired direction, not a claim about that game's confirmed mechanics.
+
+- Ordinary exchanges stay fast and connected. Slips, parries, strikes, and reactions should respond to the opponent's actual position and attack.
+- A close, correctly timed evade can trigger a brief slow-motion beat. Routine dodges do not slow every exchange.
+- High-risk maneuvers have readable preparation, a narrow counter opportunity emphasized in slow motion, and an irreversible commit point with punishable recovery.
+- Counter eligibility must use an explicitly tuned real-time input window, independent of slowed animation time. Slow motion must not accidentally make a small counter window generous.
+- A reversal flows through coordinated attacker/defender animations, then returns control quickly. The player chooses a limb strike, throw, or reposition according to timing and spacing; there is no automatic winning response.
+- A failed counter lets the dangerous move complete under the shared injury/lethal rules. Both fighters must have readable cues and consistent consequences.
+- The next animation test is one exchange: rival commits to a dangerous strike, player narrowly evades, time briefly slows, and the player chooses a follow-up. Tune this before expanding the move list.
+
+These evade, slow-motion, and coordinated-animation features are planned. The current block-fighter prototype does not implement them yet. Guard cancel and Recommit remain optional experiments.
+
 ## Working direction
 
 Levels combine third-person traversal, chases, and focused side-view fights while keeping the same combat rules. Fighters represent martial traditions and places through movement, tactics, and character, with supernatural signature abilities that have readable limits and counters. The initial code uses neutral gray-box strikes until the first fighter and visual tone are selected.
