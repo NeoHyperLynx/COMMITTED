@@ -3,29 +3,11 @@
 #include "CoreMinimal.h"
 #include "Engine/DataTable.h"
 #include "GameplayTagContainer.h"
-#include "Combat/CommittedCombatComponent.h"
+#include "CommittedCombatTypes.h"
 #include "CommittedFighterDefinition.generated.h"
 
 class UAnimMontage;
 class UInputMappingContext;
-
-UENUM(BlueprintType)
-enum class EFighterArchetype : uint8
-{
-    Striker,
-    Grappler,
-    Weapon,
-    Hybrid
-};
-
-UENUM(BlueprintType)
-enum class EFighterExchangeIdentity : uint8
-{
-    BareHandStriker,
-    Grappler,
-    StickWeapon,
-    KickingFlow
-};
 
 USTRUCT(BlueprintType)
 struct COMMITTED_API FCommittedFighterDefinition : public FTableRowBase
@@ -74,7 +56,7 @@ struct COMMITTED_API FCommittedFighterDefinition : public FTableRowBase
     float PostureRegenRate = 18.f;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Fighter|Posture")
-    float DeflectWindowModifier = 0.f; // e.g. +0.02s leniency or -0.01s tightness
+    float DeflectWindowModifier = 0.f;
 
     // Flow Profile
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Fighter|Flow", meta=(ClampMin="1.0"))

@@ -81,6 +81,16 @@ void UCommittedCombatComponent::TickComponent(float DeltaTime, ELevelTick TickTy
         }
     }
 
+    // Disarm timer decay
+    if (bIsDisarmed)
+    {
+        DisarmTimer -= DeltaTime;
+        if (DisarmTimer <= 0.f)
+        {
+            bIsDisarmed = false;
+        }
+    }
+
     // Periodic environmental surface scan
     ScanEnvironmentalSurfaces(200.f);
 }
@@ -146,10 +156,29 @@ bool UCommittedCombatComponent::StartAttack(const FCommittedAttack& Attack)
     GetWorld()->GetTimerManager().ClearTimer(PhaseTimer);
     HitThisAttack.Empty();
     CurrentAttack = Attack;
-    SetState(ECommittedCombatState::Startup);
 
+    // Stick user reach bonus (+50 units)
+    if (ActiveExchangeIdentity == EFighterExchangeIdentity::StickWeapon)
+    {
+        CurrentAttack.Range += 50.f;
+    }
+
+    // Disarmed penalty: half damage
+    if (bIsDisarmed)
+    {
+        CurrentAttack.Damage *= 0.5f;
+    }
+
+    float StartupTime = Attack.StartupSeconds;
+    // Bare-hand striker perk: accelerated counter frame startup (-25%)
+    if (ActiveExchangeIdentity == EFighterExchangeIdentity::BareHandStriker)
+    {
+        StartupTime *= 0.75f;
+    }
+
+    SetState(ECommittedCombatState::Startup);
     GetWorld()->GetTimerManager().SetTimer(PhaseTimer, this, &UCommittedCombatComponent::EnterActive,
-        FMath::Max(0.01f, Attack.StartupSeconds), false);
+        FMath::Max(0.01f, StartupTime), false);
     return true;
 }
 
@@ -284,8 +313,22 @@ void UCommittedCombatComponent::DeflectAttacker(UCommittedCombatComponent* Attac
     Attacker->AddPosture(24.f * Multiplier);
     AddFlow(18.f);
 
+    // Stick user perk: Disarm on deflect (drops weapon/halves damage for 4s + chunks bonus 30 posture)
+    if (ActiveExchangeIdentity == EFighterExchangeIdentity::StickWeapon)
+    {
+        Attacker->bIsDisarmed = true;
+        Attacker->DisarmTimer = 4.0f;
+        Attacker->AddPosture(30.f);
+    }
+
     // Attacker staggered
-    Attacker->Stagger(AttackerDeflectedStaggerSeconds);
+    float StaggerDuration = AttackerDeflectedStaggerSeconds;
+    // Bare-hand striker perk: fast deflect -> counter strings (cuts attacker stagger to 0.5s but returns player instantly)
+    if (ActiveExchangeIdentity == EFighterExchangeIdentity::BareHandStriker)
+    {
+        StaggerDuration = 0.50f;
+    }
+    Attacker->Stagger(StaggerDuration);
 
     // Cancel own recovery and enter ready immediately for follow-up
     EnterReady();
@@ -441,6 +484,9 @@ bool UCommittedCombatComponent::TryDedicatedGrab(EGrabTargetPart TargetPart)
     TArray<AActor*> Fighters;
     UGameplayStatics::GetAllActorsOfClass(GetWorld(), ACharacter::StaticClass(), Fighters);
 
+    const float DedicatedGrabRange = (ActiveExchangeIdentity == EFighterExchangeIdentity::Grappler) ? 220.f : 180.f;
+    const float DedicatedHoldDuration = (ActiveExchangeIdentity == EFighterExchangeIdentity::Grappler) ? 2.5f : 1.8f;
+
     for (AActor* OtherActor : Fighters)
     {
         if (OtherActor == OwnerActor) continue;
@@ -448,12 +494,12 @@ bool UCommittedCombatComponent::TryDedicatedGrab(EGrabTargetPart TargetPart)
         if (!OtherCombat) continue;
 
         const float Dist = FVector::Dist(OwnerActor->GetActorLocation(), OtherActor->GetActorLocation());
-        if (Dist <= 180.f && OtherCombat->State != ECommittedCombatState::Defeated)
+        if (Dist <= DedicatedGrabRange && OtherCombat->State != ECommittedCombatState::Defeated)
         {
             GrabbedOpponent = OtherCombat;
             OtherCombat->GrabbedByOpponent = this;
             OtherCombat->SetState(ECommittedCombatState::Grabbed);
-            OtherCombat->GrabTimer = 1.8f;
+            OtherCombat->GrabTimer = DedicatedHoldDuration;
 
             AddPosture(10.f); // initial grab leverage
             return true;
@@ -477,11 +523,25 @@ bool UCommittedCombatComponent::TryGrabThrow(FVector ThrowDirection)
         {
             Dir = GetOwner()->GetActorForwardVector();
         }
-        TargetChar->LaunchCharacter(Dir * 900.f + FVector(0.f, 0.f, 250.f), true, true);
+
+        // Grappler perk: heavy launch velocity with guaranteed wall splat damage on contact
+        const float ThrowPower = (ActiveExchangeIdentity == EFighterExchangeIdentity::Grappler) ? 1250.f : 900.f;
+        TargetChar->LaunchCharacter(Dir * ThrowPower + FVector(0.f, 0.f, 250.f), true, true);
+
+        // If grappler and near surface, trigger instant wall splat damage
+        if (ActiveExchangeIdentity == EFighterExchangeIdentity::Grappler && NearbyEnvironmentalSurface != EEnvironmentalSurfaceType::None)
+        {
+            TargetCombat->AddPosture(40.f);
+            TargetCombat->Health = FMath::Max(0.f, TargetCombat->Health - (TargetCombat->MaxHealth * 0.35f));
+            if (TargetCombat->Health <= 0.f)
+            {
+                TargetCombat->SetState(ECommittedCombatState::Defeated);
+            }
+        }
     }
 
     BreakGrab();
-    TargetCombat->Stagger(1.2f);
+    TargetCombat->Stagger(1.4f);
     return true;
 }
 

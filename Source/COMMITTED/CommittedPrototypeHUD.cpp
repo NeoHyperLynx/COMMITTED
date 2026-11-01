@@ -27,7 +27,25 @@ void ACommittedPrototypeHUD::DrawHUD()
             const FString FighterNameStr = Fighter->FighterProfile.FighterName.IsEmpty() ? TEXT("Pranom") : Fighter->FighterProfile.FighterName.ToString();
             const FString IdentityStr = StaticEnum<EFighterExchangeIdentity>()->GetNameStringByValue(static_cast<int64>(Fighter->FighterProfile.ExchangeIdentity));
 
-            DrawText(FString::Printf(TEXT("FIGHTER: %s  |  TRADITION: %s  |  IDENTITY: %s"), *FighterNameStr, *TraditionStr, *IdentityStr),
+            FString PerkStr = TEXT("");
+            switch (Fighter->FighterProfile.ExchangeIdentity)
+            {
+            case EFighterExchangeIdentity::Grappler:
+                PerkStr = TEXT("[PERK: GRAB -> THROW -> WALL SPLAT]");
+                break;
+            case EFighterExchangeIdentity::StickWeapon:
+                PerkStr = TEXT("[PERK: REACH + DISARM-ON-DEFLECT]");
+                break;
+            case EFighterExchangeIdentity::BareHandStriker:
+                PerkStr = TEXT("[PERK: FAST DEFLECT -> COUNTER STRINGS]");
+                break;
+            case EFighterExchangeIdentity::KickingFlow:
+                PerkStr = TEXT("[PERK: DASH-CANCELABLE RECOVERY]");
+                break;
+            }
+
+            DrawText(FString::Printf(TEXT("FIGHTER: %s  |  TRADITION: %s  |  %s  %s"),
+                *FighterNameStr, *TraditionStr, *IdentityStr, *PerkStr),
                 Gold, 28.f, 114.f, nullptr, 1.15f);
 
             // Health & Posture & Flow Meters

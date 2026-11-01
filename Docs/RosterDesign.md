@@ -12,19 +12,19 @@ Instead of fifteen separate mechanic sets, each fighter is mapped to one of four
 
 1. **Grapplers** (`EFighterExchangeIdentity::Grappler`):
    - *Traditions*: Judo, Laamb, Sambo.
-   - *Exchange Advantage*: Dedicated grab (`G`) → Directional throw into hazards → Wall Splat grounded chains. Extended grab hold window and bonus defense during grabs.
+   - *Exchange Advantage*: **Grab → Directional Throw → Wall Splat Chains** (ties into Urban Reign / Sleeping Dogs takedowns). Extended grab range (220 units), longer hold duration (2.5s), and 1250 launch velocity delivering 35% HP damage and 40 posture damage upon impacting surfaces.
 
 2. **Stick & Blade Fighters** (`EFighterExchangeIdentity::StickWeapon`):
    - *Traditions*: Arnis / Kali, Tahtib, Nguni Stick Fighting, Khridoli.
-   - *Exchange Advantage*: Superior weapon reach, unblockable tip attacks, and automatic weapon disarm posture chunking on perfect deflects, balanced by higher recovery on whiffs. High base posture pool, but lower Flow generation rate.
+   - *Exchange Advantage*: **Reach (+50 range) + Disarm on Deflect**. Landing a perfect deflect on an opponent automatically disarms them for 4.0s (halving their attack damage) and inflicts +30 bonus posture damage.
 
 3. **Bare-Hand Strikers** (`EFighterExchangeIdentity::BareHandStriker`):
    - *Traditions*: Muay Thai, Karate (Shotokan), Taekwondo, Cuban Boxing.
-   - *Exchange Advantage*: Rapid deflect-to-counter strings, high hit-confirms, fast frame startup, and high Flow accumulation on hits. Moderate posture thresholds.
+   - *Exchange Advantage*: **Fast Deflect → Counter Strings**. Deflecting an attacker reduces their stagger to 0.5s while resetting player recovery instantaneously, and attack startup frames are accelerated by 25% for high-speed strike combinations.
 
 4. **Kicking & Flow Acrobats** (`EFighterExchangeIdentity::KickingFlow`):
    - *Traditions*: Capoeira, Savate, Wing Chun, Pencak Silat.
-   - *Exchange Advantage*: Flash-dash-cancelable recovery windows directly tied to the agile movement suite. Seamless transition from evasive sweeps and feints into heavy strikes. Low posture max, but explosive Flow generation.
+   - *Exchange Advantage*: **Dash-Cancelable Recovery Frames**. Can seamlessly cancel any attack recovery frame directly into a Flash Dash (`Alt`) without needing Flow Tier 1, allowing non-stop repositioning and evasive martial arts flow.
 
 ---
 

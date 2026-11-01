@@ -146,6 +146,7 @@ void ACommittedFighterCharacter::ApplyFighterDefinition(const FCommittedFighterD
         Combat->PostureRegenRate = NewProfile.PostureRegenRate;
         Combat->FlowGainRate = NewProfile.FlowGainRate;
         Combat->MaxFlow = NewProfile.FlowMax;
+        Combat->ActiveExchangeIdentity = NewProfile.ExchangeIdentity;
         Combat->ResetCombat();
     }
 
@@ -255,10 +256,13 @@ void ACommittedFighterCharacter::DoDash()
 {
     if (!CommittedMovement) return;
 
-    // Can cancel recovery into a reactive flash dash
+    // Kicking Flow Perk: Can ALWAYS cancel recovery frames into flash dash
     if (Combat->State == ECommittedCombatState::Recovery)
     {
-        Combat->ResetCombat();
+        if (FighterProfile.ExchangeIdentity == EFighterExchangeIdentity::KickingFlow || Combat->Flow >= 30.f)
+        {
+            Combat->ResetCombat();
+        }
     }
 
     if (Combat->State != ECommittedCombatState::Ready) return;
