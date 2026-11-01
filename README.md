@@ -1,36 +1,84 @@
 # COMMITTED
 
-An Unreal Engine martial arts action game built around **reversing commitment**. This repository is at the first gray-box combat prototype stage. The first goal is one player, one rival, and a fight whose outcome can change through a well-timed, directional reversal.
+An Unreal Engine martial arts action game featuring high-speed agility inspired by **Phantom Blade Zero**, **Anthem (Bastion)** verticality, **Ghost of Tsushima** aesthetics, **Sifu** posture and 1vN crowd flow, **Sleeping Dogs** / **The Matrix: Path of Neo** environmental takedowns, **Urban Reign** grabs and fighting depth, and **Sekiro** deflect rhythm.
 
-## Current prototype
+---
 
-- Third-person fighter with keyboard, mouse, and gamepad input mappings.
-- Quick strike, limb strike, and slow committed strike. The committed strike defeats on a clean hit, but its long startup and recovery invite a reversal or punish.
-- A 0.22-second directional reversal window. An attempt at the wrong time has recovery; a successful reversal staggers the attacker and lets the defender follow up.
-- Leg impairment slows movement. Health, attack timings, ranges, and recovery are exposed to Blueprints for tuning.
-- A simple, predictable rival AI for testing reads and timing.
+## Kumite Master Roster (Data-Driven Fighter Registry)
 
-This is a **gray-box combat prototype**, not a finished game. `Content/Maps/PrototypeDuel` is a test arena with block fighters, a simple training rival, status labels, and a controls HUD. There are no authored combat animations, VFX, sound effects, or packaged build yet. The C++ editor target was compiled in Unreal Engine 5.8 on Windows; the playable arena needs a fresh build of the current source.
+The vertical slice features a data-driven fighter registry (`FCommittedFighterDefinition`) representing **15 verified global martial arts traditions** mapped to **4 distinct Exchange Identities**:
 
-## Open it in Unreal
+1. **Bare-Hand Strikers**: *Muay Thai, Karate (Shotokan), Taekwondo, Cuban Boxing*. Fast deflect-to-counter strings and rapid Flow generation.
+2. **Grapplers**: *Judo, Laamb (Senegalese wrestling), Sambo*. Dedicated grab → directional throws into hazards → Wall Splat prone chains with extended grab hold resistance.
+3. **Stick & Blade Weapons**: *Arnis / Kali, Tahtib, Nguni Stick Fighting, Khridoli*. High reach, tip strikes, and disarm posture chunking on deflects with high base posture.
+4. **Kicking & Flow Acrobats**: *Capoeira, Savate, Wing Chun, Pencak Silat*. Flash-dash-cancelable recovery windows directly tied into the movement suite and explosive Flow generation.
 
-1. Open `COMMITTED.uproject` in Unreal Engine 5.8 with Windows C++ tooling installed. Let Unreal compile the editor target after pulling new source.
-2. Open `Content/Maps/PrototypeDuel` if another level is showing. The project's startup map is the duel arena for new editor sessions; the open Untitled landscape is a separate level.
-3. Press **Play**. Use WASD and mouse; left click is quick strike, right click is limb strike, Q is the risky committed strike, and E is a timed reversal. The HUD displays these controls. Gamepad mappings are in `Config/DefaultInput.ini`.
-4. Read the rival's state label. Reversal has a short front-facing window; a missed attempt leaves recovery. Restart Play to reset the duel.
+*(Note: The mood board image in `Docs/Images/reference/Kumite_Roster_Moodboard.jpg` is an AI-generated conceptual reference for marketing/mood; the vertical slice focuses strictly on the 15 verified traditions above).*
 
-The fighters are block figures for testing timing and spacing. The rival is spawned by `CommittedGameMode` only in `PrototypeDuel`, so other levels are free to use their own encounters. Build and reopen the editor after C++ changes; an editor session already running does not automatically load a newly compiled module.
+---
 
-## Combat rules to validate
+## 1. World & Level: Sanctuary
 
-1. Spamming reversal should lose to a delayed strike because a miss enters recovery.
-2. A visible committed strike should be reversible from the defender's front and punishable on a miss.
-3. A strike that connects can injure a leg or end a fight; an injury changes movement until the duel resets.
-4. A reverse at the correct time should interrupt the attack and leave a follow-up opportunity.
-5. The same timing rules must later survive a shift from third-person play to a side-view duel.
+The startup map `Sanctuary` (`Content/Maps/Sanctuary.umap`, generated via `Tools/create_sanctuary_map.py`) unites Anthem's sheer verticality with Tsushima's serene shrine atmosphere:
+- **Vista Peak (Overlook Spawn)**: Spawns the player 120m high above the canyon with a vista overlook.
+- **Canyon Chasm & Shinto Bridges**: Suspension bridges spanning deep chasms with Torii gates and narrow paths.
+- **Shaper Monolith Walls**: Towering sheer monolith walls designed for high-speed wall running and parkour descent.
+- **Sacred Dueling Ring (Boss Arena)**: Sunken arena surrounded by Shinto stone pillars, Torii structures, and monolith barriers.
 
-## Working direction
+---
 
-Levels combine third-person traversal, chases, and focused side-view fights while keeping the same combat rules. Fighters represent martial traditions and places through movement, tactics, and character, with supernatural signature abilities that have readable limits and counters. The initial code uses neutral gray-box strikes until the first fighter and visual tone are selected.
+## 2. Combat Pillars & Mechanics
 
-**Guard cancel and an attack-cancel system are experiments**, not core requirements. They will be added only if playtests show more expressive decisions without making committed lethal strikes safe. See `Docs/CombatVision.md` for the design boundaries.
+### Posture & Flow System (Sifu & Sekiro)
+- **Posture (0–100)**: Guarding or taking strikes increases Posture. Reaching 100 Posture triggers **Posture Break**:
+  - Enemies enter a 2.0s vulnerable state susceptible to lethal criticals and environmental slams.
+  - Player break causes a 1.4s stagger taking 1.75× damage.
+- **Deflect Window (0.14s)**: Pressing `E` precisely deflects incoming strikes, dealing 24 posture damage to the attacker and awarding 18 Flow. Consecutive deflects scale posture damage up to 2.5×.
+- **Flow (0–100)**: Offensive kinetic momentum built from clean strikes (+12), deflects (+18), and parkour (+8). Unlocks free dash cancels, bonus posture damage, and Phantom State at 100 Flow.
+
+### Environmental Takedowns (Sleeping Dogs & Path of Neo)
+- Within 2.0m of an environmental obstacle when an opponent is posture-broken:
+  - **Ledge / Chasm**: Instant ejection off the cliff.
+  - **Pillar / Torii Post**: Structural slam dealing 75% max HP and wall splat stumble.
+  - **Wall**: High-impact wall smash with i-frames during execution.
+- Press `F` when prompted to execute.
+
+### Dedicated Grab & Throws (Urban Reign)
+- Press `G` to initiate a dedicated grab targeting head or body.
+- Hold `G` + Direction to hurl the enemy toward adjacent walls (Wall Splat prone) or off ledges.
+
+### 1vN Crowd Director (Sifu / Arkham Rhythm)
+- The Crowd Director enforces attack tokens (max 2 concurrent attackers in standard skirmishes).
+- Enemy archetypes:
+  1. **Grunt (Striker)**: Frontal 2-hit quick strikes, retreats to perimeter when token is lost.
+  2. **Bruiser (Grappler & Heavy)**: Armored overhead swings, immune to light flinch.
+  3. **Skirmisher (Agile Flanker)**: Rapid flank circling and slide sweep kicks.
+  4. **Scout (Ranged Disruptor)**: Distant perimeter harasser.
+  5. **The Sanctuary Boss Rival**: Multi-hit clash strings and phase transitions.
+
+---
+
+## 3. Controls
+
+| Action | Keyboard / Mouse | Gamepad |
+| --- | --- | --- |
+| Move | `W` `A` `S` `D` | Left Stick |
+| Look | Mouse | Right Stick |
+| Sprint | `Left Shift` | Left Stick Click |
+| Slide | `Left Ctrl` / `C` | `B` / `Circle` |
+| Flash Dash | `Left Alt` | `Left Trigger` |
+| Jump / Wall Kick | `Spacebar` | `A` / `Cross` |
+| Quick / Movement Strike | Left Mouse Button | `X` / `Square` |
+| Limb Strike | Right Mouse Button | `Y` / `Triangle` |
+| Committed Strike | `Q` | `Right Trigger` |
+| Deflect / Reversal | `E` | `Left Shoulder` |
+| Environmental Takedown | `F` | `B` / `Circle` |
+| Grab / Throw | `G` | `Left Shoulder` |
+
+---
+
+## 4. Open it in Unreal
+
+1. Open `COMMITTED.uproject` in Unreal Engine 5.8 with Windows C++ tooling installed.
+2. The project's startup map is `Sanctuary`.
+3. Press **Play** to start at Vista Peak and traverse through the Shinto canyon to duel the boss in the Sacred Dueling Ring!
