@@ -136,6 +136,25 @@ void ACommittedFighterCharacter::BeginPlay()
     }
 }
 
+void ACommittedFighterCharacter::ApplyFighterDefinition(const FCommittedFighterDefinition& NewProfile)
+{
+    FighterProfile = NewProfile;
+
+    if (Combat)
+    {
+        Combat->MaxPosture = NewProfile.PostureMax;
+        Combat->PostureRegenRate = NewProfile.PostureRegenRate;
+        Combat->FlowGainRate = NewProfile.FlowGainRate;
+        Combat->MaxFlow = NewProfile.FlowMax;
+        Combat->ResetCombat();
+    }
+
+    if (!NewProfile.LightAttack.Name.IsNone()) LightAttack = NewProfile.LightAttack;
+    if (!NewProfile.HeavyAttack.Name.IsNone()) CommittedStrike = NewProfile.HeavyAttack;
+
+    RefreshPrototypeLabel(Combat ? Combat->State : ECommittedCombatState::Ready, NAME_None);
+}
+
 void ACommittedFighterCharacter::OnCustomMovementModeChanged(ECommittedCustomMovementMode NewCustomMode)
 {
     RefreshPrototypeLabel(Combat->State, NAME_None);

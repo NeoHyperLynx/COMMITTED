@@ -4,6 +4,7 @@
 #include "GameFramework/Character.h"
 #include "CommittedCombatComponent.h"
 #include "CommittedMovementComponent.h"
+#include "CommittedFighterDefinition.h"
 #include "CommittedFighterCharacter.generated.h"
 
 class USpringArmComponent;
@@ -65,6 +66,12 @@ public:
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="COMMITTED|Camera")
     float DashFOV = 110.f;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="COMMITTED|Fighter")
+    FCommittedFighterDefinition FighterProfile;
+
+    UFUNCTION(BlueprintCallable, Category="COMMITTED|Fighter")
+    void ApplyFighterDefinition(const FCommittedFighterDefinition& NewProfile);
 
     virtual void Tick(float DeltaSeconds) override;
     virtual void SetupPlayerInputComponent(UInputComponent* PlayerInputComponent) override;

@@ -127,6 +127,9 @@ public:
     float Flow = 0.f;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="COMMITTED|Combat|Flow")
+    float FlowGainRate = 12.f;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="COMMITTED|Combat|Flow")
     float FlowDecayRate = 6.f;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="COMMITTED|Combat|Flow")
@@ -215,6 +218,7 @@ private:
     float DeflectActiveTime = 0.f;
     float GrabTimer = 0.f;
     int32 ConsecutiveDeflects = 0;
+    float ConsecutiveDeflectResetTimer = 0.f;
 
     void SetState(ECommittedCombatState NewState);
     void EnterActive();

@@ -3,6 +3,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/GameModeBase.h"
 #include "Combat/CommittedCrowdDirectorComponent.h"
+#include "UI/CommittedCharacterSelectWidget.h"
 #include "CommittedGameMode.generated.h"
 
 UCLASS()
@@ -15,6 +16,12 @@ public:
 
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="COMMITTED")
     TObjectPtr<UCommittedCrowdDirectorComponent> CrowdDirector;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="COMMITTED|UI")
+    TSubclassOf<UCommittedCharacterSelectWidget> CharacterSelectWidgetClass;
+
+    UFUNCTION(BlueprintCallable, Category="COMMITTED|Select")
+    void OnFighterConfirmed(const FCommittedFighterDefinition& FighterDef);
 
 protected:
     virtual void BeginPlay() override;

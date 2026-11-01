@@ -1,7 +1,9 @@
 #include "CommittedGameMode.h"
 #include "CommittedPrototypeHUD.h"
 #include "Combat/CommittedFighterCharacter.h"
+#include "Combat/CommittedFighterRegistry.h"
 #include "Combat/SanctuaryEnemyCharacter.h"
+#include "Kismet/GameplayStatics.h"
 #include "Engine/World.h"
 
 ACommittedGameMode::ACommittedGameMode()
@@ -17,6 +19,19 @@ void ACommittedGameMode::BeginPlay()
 
     if (!GetWorld()) return;
     const FString CurrentMap = GetWorld()->GetMapName();
+
+    // Initialize default fighter profile for player
+    if (APlayerController* PC = UGameplayStatics::GetPlayerController(this, 0))
+    {
+        if (ACommittedFighterCharacter* PlayerChar = Cast<ACommittedFighterCharacter>(PC->GetPawn()))
+        {
+            FCommittedFighterDefinition DefaultFighter;
+            if (UCommittedFighterRegistry::GetFighterDefinition(TEXT("MuayThai"), DefaultFighter))
+            {
+                PlayerChar->ApplyFighterDefinition(DefaultFighter);
+            }
+        }
+    }
 
     if (CurrentMap.Contains(TEXT("Sanctuary")))
     {
@@ -36,6 +51,17 @@ void ACommittedGameMode::BeginPlay()
             {
                 CrowdDirector->RegisterEnemy(Rival->Combat);
             }
+        }
+    }
+}
+
+void ACommittedGameMode::OnFighterConfirmed(const FCommittedFighterDefinition& FighterDef)
+{
+    if (APlayerController* PC = UGameplayStatics::GetPlayerController(this, 0))
+    {
+        if (ACommittedFighterCharacter* PlayerChar = Cast<ACommittedFighterCharacter>(PC->GetPawn()))
+        {
+            PlayerChar->ApplyFighterDefinition(FighterDef);
         }
     }
 }

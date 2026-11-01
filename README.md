@@ -4,6 +4,19 @@ An Unreal Engine martial arts action game featuring high-speed agility inspired 
 
 ---
 
+## Kumite Master Roster (Data-Driven Fighter Registry)
+
+The vertical slice features a data-driven fighter registry (`FCommittedFighterDefinition`) representing **15 verified global martial arts traditions** mapped to **4 distinct Exchange Identities**:
+
+1. **Bare-Hand Strikers**: *Muay Thai, Karate (Shotokan), Taekwondo, Cuban Boxing*. Fast deflect-to-counter strings and rapid Flow generation.
+2. **Grapplers**: *Judo, Laamb (Senegalese wrestling), Sambo*. Dedicated grab → directional throws into hazards → Wall Splat prone chains with extended grab hold resistance.
+3. **Stick & Blade Weapons**: *Arnis / Kali, Tahtib, Nguni Stick Fighting, Khridoli*. High reach, tip strikes, and disarm posture chunking on deflects with high base posture.
+4. **Kicking & Flow Acrobats**: *Capoeira, Savate, Wing Chun, Pencak Silat*. Flash-dash-cancelable recovery windows directly tied into the movement suite and explosive Flow generation.
+
+*(Note: The mood board image in `Docs/Images/reference/Kumite_Roster_Moodboard.jpg` is an AI-generated conceptual reference for marketing/mood; the vertical slice focuses strictly on the 15 verified traditions above).*
+
+---
+
 ## 1. World & Level: Sanctuary
 
 The startup map `Sanctuary` (`Content/Maps/Sanctuary.umap`, generated via `Tools/create_sanctuary_map.py`) unites Anthem's sheer verticality with Tsushima's serene shrine atmosphere:

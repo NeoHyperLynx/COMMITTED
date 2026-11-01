@@ -71,6 +71,16 @@ void UCommittedCombatComponent::TickComponent(float DeltaTime, ELevelTick TickTy
         }
     }
 
+    // Consecutive deflect chain timer (decays if no deflect within 0.8s)
+    if (ConsecutiveDeflectResetTimer > 0.f)
+    {
+        ConsecutiveDeflectResetTimer -= DeltaTime;
+        if (ConsecutiveDeflectResetTimer <= 0.f)
+        {
+            ConsecutiveDeflects = 0;
+        }
+    }
+
     // Periodic environmental surface scan
     ScanEnvironmentalSurfaces(200.f);
 }
@@ -162,7 +172,6 @@ void UCommittedCombatComponent::EnterReady()
 {
     GetWorld()->GetTimerManager().ClearTimer(PhaseTimer);
     CurrentAttack = FCommittedAttack();
-    ConsecutiveDeflects = 0;
     SetState(ECommittedCombatState::Ready);
 }
 
@@ -250,7 +259,7 @@ void UCommittedCombatComponent::ReceiveAttack(UCommittedCombatComponent* Attacke
     Health = FMath::Max(0.f, Health - DamageDealt);
 
     AddPosture(Attack.PostureDamage);
-    if (Attacker) Attacker->AddFlow(12.f);
+    if (Attacker) Attacker->AddFlow(Attacker->FlowGainRate);
 
     OnHitReceived.Broadcast(Attack.TargetLimb, Attack.bLethal);
 
@@ -268,6 +277,7 @@ void UCommittedCombatComponent::DeflectAttacker(UCommittedCombatComponent* Attac
     if (!Attacker) return;
 
     ConsecutiveDeflects++;
+    ConsecutiveDeflectResetTimer = 0.80f; // 0.8s chain window as specified in design doc
     const float Multiplier = FMath::Clamp(1.f + (ConsecutiveDeflects - 1) * 0.25f, 1.f, 2.5f);
 
     // Inflict posture damage on attacker using exact formula: 24.0 * Multiplier
@@ -505,6 +515,8 @@ void UCommittedCombatComponent::ResetCombat()
     Health = MaxHealth;
     Posture = 0.f;
     Flow = 0.f;
+    ConsecutiveDeflects = 0;
+    ConsecutiveDeflectResetTimer = 0.f;
     ImpairedLimbs.Empty();
     HitThisAttack.Empty();
     BreakGrab();
