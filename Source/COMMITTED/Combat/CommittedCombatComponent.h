@@ -152,6 +152,7 @@ protected:
 
 private:
     FTimerHandle PhaseTimer;
+    FTimerHandle PostureBreakTimer;
     TSet<UCommittedCombatComponent*> HitThisAttack;
 
     float PostureRegenTimer = 0.f;
@@ -160,7 +161,7 @@ private:
     float GrabTimer = 0.f;
     int32 ConsecutiveDeflects = 0;
     float ConsecutiveDeflectResetTimer = 0.f;
-    FVector LastDeflectedOpponentLocation = FVector::ZeroVector;
+    float CachedInitialDeflectDist = 0.f;
     TWeakObjectPtr<AActor> LastDeflectedOpponentActor;
 
     void SetState(ECommittedCombatState NewState);

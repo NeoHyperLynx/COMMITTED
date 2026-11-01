@@ -85,9 +85,8 @@ void UCommittedCombatComponent::TickComponent(float DeltaTime, ELevelTick TickTy
         else if (LastDeflectedOpponentActor.IsValid() && GetOwner())
         {
             const float CurrentDist = FVector::Dist(GetOwner()->GetActorLocation(), LastDeflectedOpponentActor->GetActorLocation());
-            const float InitialDist = FVector::Dist(LastDeflectedOpponentLocation, LastDeflectedOpponentActor->GetActorLocation());
-            // Reset chain if player retreated more than 350 units
-            if ((CurrentDist - InitialDist) > 350.f)
+            // Reset chain if player retreated more than 350 units past initial cached distance
+            if ((CurrentDist - CachedInitialDeflectDist) > 350.f)
             {
                 ConsecutiveDeflects = 0;
                 ConsecutiveDeflectResetTimer = 0.f;
@@ -146,6 +145,7 @@ void UCommittedCombatComponent::AddFlow(float Amount)
 void UCommittedCombatComponent::EnterPostureBroken()
 {
     GetWorld()->GetTimerManager().ClearTimer(PhaseTimer);
+    GetWorld()->GetTimerManager().ClearTimer(PostureBreakTimer);
     SetState(ECommittedCombatState::PostureBroken);
 
     // If owner is player, apply 1.4s player break duration; enemies receive 2.0s vulnerability
@@ -154,11 +154,12 @@ void UCommittedCombatComponent::EnterPostureBroken()
     const bool bIsPlayer = (OwnerActor && OwnerActor == PlayerChar);
 
     const float BreakDuration = bIsPlayer ? 1.40f : 2.0f;
-    GetWorld()->GetTimerManager().SetTimer(PhaseTimer, this, &UCommittedCombatComponent::RecoverFromPostureBroken, BreakDuration, false);
+    GetWorld()->GetTimerManager().SetTimer(PostureBreakTimer, this, &UCommittedCombatComponent::RecoverFromPostureBroken, BreakDuration, false);
 }
 
 void UCommittedCombatComponent::RecoverFromPostureBroken()
 {
+    GetWorld()->GetTimerManager().ClearTimer(PostureBreakTimer);
     if (State == ECommittedCombatState::PostureBroken)
     {
         // Player recovers with 60 posture; enemies recover with 70
@@ -304,7 +305,13 @@ void UCommittedCombatComponent::ReceiveAttack(UCommittedCombatComponent* Attacke
     }
 
     // Hit connected
-    GetWorld()->GetTimerManager().ClearTimer(PhaseTimer);
+    const bool bWasPostureBroken = (State == ECommittedCombatState::PostureBroken);
+
+    // Only clear attack PhaseTimer if not currently in a PostureBroken state
+    if (!bWasPostureBroken)
+    {
+        GetWorld()->GetTimerManager().ClearTimer(PhaseTimer);
+    }
 
     // Taking a hit immediately resets consecutive deflect chain
     ConsecutiveDeflects = 0;
@@ -317,13 +324,14 @@ void UCommittedCombatComponent::ReceiveAttack(UCommittedCombatComponent* Attacke
     }
 
     float DamageDealt = Attack.bLethal ? Health : Attack.Damage;
-    if (State == ECommittedCombatState::PostureBroken)
+    if (bWasPostureBroken)
     {
         DamageDealt *= 1.75f; // 1.75x unmitigated damage during posture break
     }
 
-    // 50% damage reduction while holding a grabbed opponent
-    if (GrabbedOpponent.IsValid())
+    // 50% damage reduction while holding a grabbed opponent (including mitigating lethal attacks)
+    const bool bHoldingGrab = GrabbedOpponent.IsValid();
+    if (bHoldingGrab)
     {
         DamageDealt *= 0.50f;
     }
@@ -341,13 +349,20 @@ void UCommittedCombatComponent::ReceiveAttack(UCommittedCombatComponent* Attacke
 
     OnHitReceived.Broadcast(Attack.TargetLimb, Attack.bLethal);
 
-    if (Health <= 0.f || Attack.bLethal)
+    // If holding a grab, lethal finisher is mitigated and does not cause an automatic one-shot
+    const bool bLethalKilled = Attack.bLethal && !bHoldingGrab;
+    if (Health <= 0.f || bLethalKilled)
     {
+        GetWorld()->GetTimerManager().ClearTimer(PostureBreakTimer);
         SetState(ECommittedCombatState::Defeated);
         return;
     }
 
-    Stagger(0.45f);
+    // If already posture broken, do NOT overwrite the 1.40s posture break window with a 0.45s stagger!
+    if (!bWasPostureBroken)
+    {
+        Stagger(0.45f);
+    }
 }
 
 void UCommittedCombatComponent::DeflectAttacker(UCommittedCombatComponent* Attacker)
@@ -359,7 +374,7 @@ void UCommittedCombatComponent::DeflectAttacker(UCommittedCombatComponent* Attac
     if (GetOwner() && Attacker->GetOwner())
     {
         LastDeflectedOpponentActor = Attacker->GetOwner();
-        LastDeflectedOpponentLocation = GetOwner()->GetActorLocation();
+        CachedInitialDeflectDist = FVector::Dist(GetOwner()->GetActorLocation(), Attacker->GetOwner()->GetActorLocation());
     }
 
     const float Multiplier = FMath::Clamp(1.f + (ConsecutiveDeflects - 1) * 0.25f, 1.f, 2.5f);
@@ -385,12 +400,12 @@ void UCommittedCombatComponent::DeflectAttacker(UCommittedCombatComponent* Attac
     }
     Attacker->Stagger(StaggerDuration);
 
-    // Trigger crowd hesitation on perfect deflect
+    // Trigger crowd token pause on deflect (0.35s micro-hesitation without freezing entire crowd)
     if (GetWorld() && GetWorld()->GetAuthGameMode())
     {
         if (UCommittedCrowdDirectorComponent* Director = GetWorld()->GetAuthGameMode()->FindComponentByClass<UCommittedCrowdDirectorComponent>())
         {
-            Director->TriggerGlobalHesitation(0.65f);
+            Director->TriggerGlobalHesitation(0.35f);
         }
     }
 
