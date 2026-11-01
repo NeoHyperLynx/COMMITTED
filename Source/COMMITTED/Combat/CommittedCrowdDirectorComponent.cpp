@@ -27,7 +27,7 @@ void UCommittedCrowdDirectorComponent::UnregisterEnemy(UCommittedCombatComponent
     RegisteredEnemies.Remove(CombatComp);
 }
 
-void UCommittedCrowdDirectorComponent::TriggerGlobalHesitation()
+void UCommittedCrowdDirectorComponent::TriggerGlobalHesitation(float Duration)
 {
     for (auto& EnemyPtr : RegisteredEnemies)
     {
@@ -36,7 +36,7 @@ void UCommittedCrowdDirectorComponent::TriggerGlobalHesitation()
             EnemyPtr->bHasAttackToken = false;
         }
     }
-    EvaluationTimer = HesitationDurationOnTakedown;
+    EvaluationTimer = (Duration > 0.f) ? Duration : HesitationDurationOnTakedown;
 }
 
 void UCommittedCrowdDirectorComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)

@@ -261,7 +261,7 @@ void ACommittedFighterCharacter::DoDash()
     {
         if (FighterProfile.ExchangeIdentity == EFighterExchangeIdentity::KickingFlow || Combat->Flow >= 30.f)
         {
-            Combat->ResetCombat();
+            Combat->CancelAttackRecovery();
         }
     }
 

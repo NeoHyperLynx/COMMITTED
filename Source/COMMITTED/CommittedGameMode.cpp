@@ -31,6 +31,17 @@ void ACommittedGameMode::BeginPlay()
                 PlayerChar->ApplyFighterDefinition(DefaultFighter);
             }
         }
+
+        // Instantiate character select widget if configured
+        if (CharacterSelectWidgetClass)
+        {
+            UCommittedCharacterSelectWidget* SelectWidget = CreateWidget<UCommittedCharacterSelectWidget>(PC, CharacterSelectWidgetClass);
+            if (SelectWidget)
+            {
+                SelectWidget->OnFighterConfirmed.AddDynamic(this, &ACommittedGameMode::OnFighterConfirmed);
+                SelectWidget->AddToViewport();
+            }
+        }
     }
 
     if (CurrentMap.Contains(TEXT("Sanctuary")))

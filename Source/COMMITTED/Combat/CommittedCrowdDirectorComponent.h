@@ -30,7 +30,7 @@ public:
     void UnregisterEnemy(UCommittedCombatComponent* CombatComp);
 
     UFUNCTION(BlueprintCallable, Category="CrowdDirector")
-    void TriggerGlobalHesitation();
+    void TriggerGlobalHesitation(float Duration = -1.f);
 
     virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 

@@ -133,6 +133,9 @@ public:
     UFUNCTION(BlueprintCallable, Category="COMMITTED|Combat")
     void AddFlow(float Amount);
 
+    UFUNCTION(BlueprintCallable, Category = "Combat")
+    void CancelAttackRecovery();
+
     UFUNCTION(BlueprintCallable, Category="COMMITTED|Combat")
     void ResetCombat();
 

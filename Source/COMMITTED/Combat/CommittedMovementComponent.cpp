@@ -4,6 +4,10 @@
 #include "Engine/World.h"
 #include "CollisionQueryParams.h"
 
+#ifndef MIN_TICK_TIME
+#define MIN_TICK_TIME 1e-6f
+#endif
+
 UCommittedMovementComponent::UCommittedMovementComponent()
 {
     MaxWalkSpeed = NormalWalkSpeed;

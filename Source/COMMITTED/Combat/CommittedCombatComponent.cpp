@@ -4,6 +4,8 @@
 #include "Kismet/GameplayStatics.h"
 #include "Engine/World.h"
 #include "CollisionQueryParams.h"
+#include "CommittedCrowdDirectorComponent.h"
+#include "GameFramework/GameModeBase.h"
 
 UCommittedCombatComponent::UCommittedCombatComponent()
 {
@@ -255,6 +257,8 @@ void UCommittedCombatComponent::ScanForTargets()
 void UCommittedCombatComponent::ReceiveAttack(UCommittedCombatComponent* Attacker, const FCommittedAttack& Attack)
 {
     if (State == ECommittedCombatState::Defeated) return;
+    // Full invulnerability during environmental executions (0.85s i-frame window)
+    if (State == ECommittedCombatState::PerformingTakedown) return;
 
     AActor* DefenderActor = GetOwner();
     AActor* AttackerActor = Attacker ? Attacker->GetOwner() : nullptr;
@@ -287,7 +291,13 @@ void UCommittedCombatComponent::ReceiveAttack(UCommittedCombatComponent* Attacke
     }
     Health = FMath::Max(0.f, Health - DamageDealt);
 
-    AddPosture(Attack.PostureDamage);
+    float EffectivePostureDamage = Attack.PostureDamage;
+    // Tier 2 Flow perk: +25% guard penetration and posture damage
+    if (Attacker && Attacker->Flow >= 70.f)
+    {
+        EffectivePostureDamage *= 1.25f;
+    }
+    AddPosture(EffectivePostureDamage);
     if (Attacker) Attacker->AddFlow(Attacker->FlowGainRate);
 
     OnHitReceived.Broadcast(Attack.TargetLimb, Attack.bLethal);
@@ -330,6 +340,15 @@ void UCommittedCombatComponent::DeflectAttacker(UCommittedCombatComponent* Attac
     }
     Attacker->Stagger(StaggerDuration);
 
+    // Trigger crowd hesitation on perfect deflect
+    if (GetWorld() && GetWorld()->GetAuthGameMode())
+    {
+        if (UCommittedCrowdDirectorComponent* Director = GetWorld()->GetAuthGameMode()->FindComponentByClass<UCommittedCrowdDirectorComponent>())
+        {
+            Director->TriggerGlobalHesitation(0.65f);
+        }
+    }
+
     // Cancel own recovery and enter ready immediately for follow-up
     EnterReady();
 }
@@ -365,7 +384,12 @@ bool UCommittedCombatComponent::ScanEnvironmentalSurfaces(float MaxRadius)
         }
     }
 
-    // Trace in 8 radial directions for walls or pillars
+    // Trace in 8 radial directions to collect all surface candidates and sort by priority: Ledge > Pillar > Wall
+    EEnvironmentalSurfaceType BestSurface = EEnvironmentalSurfaceType::None;
+    FVector BestPoint = FVector::ZeroVector;
+    FVector BestNormal = FVector::ZeroVector;
+    float ClosestDistSq = TNumericLimits<float>::Max();
+
     for (int32 i = 0; i < 8; ++i)
     {
         const float Angle = i * (360.f / 8.f);
@@ -373,19 +397,40 @@ bool UCommittedCombatComponent::ScanEnvironmentalSurfaces(float MaxRadius)
         FHitResult WallHit;
         if (GetWorld()->LineTraceSingleByChannel(WallHit, Loc, Loc + (Dir * MaxRadius), ECC_WorldStatic, Params))
         {
-            NearbySurfacePoint = WallHit.ImpactPoint;
-            NearbySurfaceNormal = WallHit.ImpactNormal;
+            const float HitDistSq = FVector::DistSquared(Loc, WallHit.ImpactPoint);
+            const bool bIsPillar = WallHit.GetActor() && WallHit.GetActor()->GetName().Contains(TEXT("Pillar"));
+            const EEnvironmentalSurfaceType SurfaceType = bIsPillar ? EEnvironmentalSurfaceType::Pillar : EEnvironmentalSurfaceType::Wall;
 
-            if (WallHit.GetActor() && WallHit.GetActor()->GetName().Contains(TEXT("Pillar")))
+            // Pillar takes precedence over Wall
+            if (BestSurface != EEnvironmentalSurfaceType::Pillar && SurfaceType == EEnvironmentalSurfaceType::Pillar)
             {
-                NearbyEnvironmentalSurface = EEnvironmentalSurfaceType::Pillar;
+                BestSurface = SurfaceType;
+                BestPoint = WallHit.ImpactPoint;
+                BestNormal = WallHit.ImpactNormal;
+                ClosestDistSq = HitDistSq;
             }
-            else
+            else if (BestSurface == SurfaceType && HitDistSq < ClosestDistSq)
             {
-                NearbyEnvironmentalSurface = EEnvironmentalSurfaceType::Wall;
+                BestPoint = WallHit.ImpactPoint;
+                BestNormal = WallHit.ImpactNormal;
+                ClosestDistSq = HitDistSq;
             }
-            return true;
+            else if (BestSurface == EEnvironmentalSurfaceType::None)
+            {
+                BestSurface = SurfaceType;
+                BestPoint = WallHit.ImpactPoint;
+                BestNormal = WallHit.ImpactNormal;
+                ClosestDistSq = HitDistSq;
+            }
         }
+    }
+
+    if (BestSurface != EEnvironmentalSurfaceType::None)
+    {
+        NearbyEnvironmentalSurface = BestSurface;
+        NearbySurfacePoint = BestPoint;
+        NearbySurfaceNormal = BestNormal;
+        return true;
     }
 
     NearbyEnvironmentalSurface = EEnvironmentalSurfaceType::None;
@@ -419,6 +464,15 @@ bool UCommittedCombatComponent::TryEnvironmentalTakedown()
 
         BreakGrab();
         AddFlow(25.f);
+
+        // Pause crowd director during execution
+        if (GetWorld() && GetWorld()->GetAuthGameMode())
+        {
+            if (UCommittedCrowdDirectorComponent* Director = GetWorld()->GetAuthGameMode()->FindComponentByClass<UCommittedCrowdDirectorComponent>())
+            {
+                Director->TriggerGlobalHesitation(0.85f);
+            }
+        }
 
         GetWorld()->GetTimerManager().SetTimer(PhaseTimer, this, &UCommittedCombatComponent::EnterReady, 0.85f, false);
         return true;
@@ -464,6 +518,15 @@ bool UCommittedCombatComponent::TryEnvironmentalTakedown()
             }
 
             AddFlow(35.f);
+
+            // Pause crowd director during execution
+            if (GetWorld() && GetWorld()->GetAuthGameMode())
+            {
+                if (UCommittedCrowdDirectorComponent* Director = GetWorld()->GetAuthGameMode()->FindComponentByClass<UCommittedCrowdDirectorComponent>())
+                {
+                    Director->TriggerGlobalHesitation(0.85f);
+                }
+            }
 
             // 0.85s invulnerable execution window before returning to ready
             GetWorld()->GetTimerManager().SetTimer(PhaseTimer, this, &UCommittedCombatComponent::EnterReady, 0.85f, false);
@@ -565,6 +628,17 @@ void UCommittedCombatComponent::BreakGrab()
 
     if (State == ECommittedCombatState::Grabbed)
     {
+        EnterReady();
+    }
+}
+
+void UCommittedCombatComponent::CancelAttackRecovery()
+{
+    if (State == ECommittedCombatState::Recovery || State == ECommittedCombatState::Startup || State == ECommittedCombatState::Active)
+    {
+        GetWorld()->GetTimerManager().ClearTimer(PhaseTimer);
+        HitThisAttack.Empty();
+        CurrentAttack = FCommittedAttack();
         EnterReady();
     }
 }
