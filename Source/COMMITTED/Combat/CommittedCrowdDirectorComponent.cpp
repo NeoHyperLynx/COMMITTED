@@ -29,14 +29,21 @@ void UCommittedCrowdDirectorComponent::UnregisterEnemy(UCommittedCombatComponent
 
 void UCommittedCrowdDirectorComponent::TriggerGlobalHesitation(float Duration)
 {
+    const float ActualDuration = (Duration > 0.f) ? Duration : HesitationDurationOnTakedown;
+
     for (auto& EnemyPtr : RegisteredEnemies)
     {
         if (EnemyPtr.IsValid())
         {
             EnemyPtr->bHasAttackToken = false;
+            // Interrupt in-progress attacks and freeze/stagger active swingers
+            if (EnemyPtr->State == ECommittedCombatState::Startup || EnemyPtr->State == ECommittedCombatState::Active)
+            {
+                EnemyPtr->Stagger(ActualDuration);
+            }
         }
     }
-    EvaluationTimer = (Duration > 0.f) ? Duration : HesitationDurationOnTakedown;
+    EvaluationTimer = ActualDuration;
 }
 
 void UCommittedCrowdDirectorComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)

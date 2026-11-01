@@ -73,13 +73,26 @@ void UCommittedCombatComponent::TickComponent(float DeltaTime, ELevelTick TickTy
         }
     }
 
-    // Consecutive deflect chain timer (decays if no deflect within 0.8s)
+    // Consecutive deflect chain timer (decays if no deflect within 0.8s, or if retreated >350 units)
     if (ConsecutiveDeflectResetTimer > 0.f)
     {
         ConsecutiveDeflectResetTimer -= DeltaTime;
         if (ConsecutiveDeflectResetTimer <= 0.f)
         {
             ConsecutiveDeflects = 0;
+            LastDeflectedOpponentActor = nullptr;
+        }
+        else if (LastDeflectedOpponentActor.IsValid() && GetOwner())
+        {
+            const float CurrentDist = FVector::Dist(GetOwner()->GetActorLocation(), LastDeflectedOpponentActor->GetActorLocation());
+            const float InitialDist = FVector::Dist(LastDeflectedOpponentLocation, LastDeflectedOpponentActor->GetActorLocation());
+            // Reset chain if player retreated more than 350 units
+            if ((CurrentDist - InitialDist) > 350.f)
+            {
+                ConsecutiveDeflects = 0;
+                ConsecutiveDeflectResetTimer = 0.f;
+                LastDeflectedOpponentActor = nullptr;
+            }
         }
     }
 
@@ -293,6 +306,11 @@ void UCommittedCombatComponent::ReceiveAttack(UCommittedCombatComponent* Attacke
     // Hit connected
     GetWorld()->GetTimerManager().ClearTimer(PhaseTimer);
 
+    // Taking a hit immediately resets consecutive deflect chain
+    ConsecutiveDeflects = 0;
+    ConsecutiveDeflectResetTimer = 0.f;
+    LastDeflectedOpponentActor = nullptr;
+
     if (Attack.TargetLimb != ECommittedLimb::None)
     {
         ImpairedLimbs.AddUnique(Attack.TargetLimb);
@@ -303,6 +321,13 @@ void UCommittedCombatComponent::ReceiveAttack(UCommittedCombatComponent* Attacke
     {
         DamageDealt *= 1.75f; // 1.75x unmitigated damage during posture break
     }
+
+    // 50% damage reduction while holding a grabbed opponent
+    if (GrabbedOpponent.IsValid())
+    {
+        DamageDealt *= 0.50f;
+    }
+
     Health = FMath::Max(0.f, Health - DamageDealt);
 
     float EffectivePostureDamage = Attack.PostureDamage;
@@ -331,6 +356,12 @@ void UCommittedCombatComponent::DeflectAttacker(UCommittedCombatComponent* Attac
 
     ConsecutiveDeflects++;
     ConsecutiveDeflectResetTimer = 0.80f; // 0.8s chain window as specified in design doc
+    if (GetOwner() && Attacker->GetOwner())
+    {
+        LastDeflectedOpponentActor = Attacker->GetOwner();
+        LastDeflectedOpponentLocation = GetOwner()->GetActorLocation();
+    }
+
     const float Multiplier = FMath::Clamp(1.f + (ConsecutiveDeflects - 1) * 0.25f, 1.f, 2.5f);
 
     // Inflict posture damage on attacker using exact formula: 24.0 * Multiplier
@@ -347,10 +378,10 @@ void UCommittedCombatComponent::DeflectAttacker(UCommittedCombatComponent* Attac
 
     // Attacker staggered
     float StaggerDuration = AttackerDeflectedStaggerSeconds;
-    // Bare-hand striker perk: fast deflect -> counter strings (cuts attacker stagger to 0.5s but returns player instantly)
+    // Bare-hand striker perk: extended counter punish window (+0.25s attacker stagger)
     if (ActiveExchangeIdentity == EFighterExchangeIdentity::BareHandStriker)
     {
-        StaggerDuration = 0.50f;
+        StaggerDuration = 1.10f;
     }
     Attacker->Stagger(StaggerDuration);
 
@@ -517,10 +548,23 @@ bool UCommittedCombatComponent::TryEnvironmentalTakedown()
                 OtherCombat->Health = 0.f;
                 OtherCombat->SetState(ECommittedCombatState::Defeated);
             }
+            else if (NearbyEnvironmentalSurface == EEnvironmentalSurfaceType::Pillar)
+            {
+                // Pillar slam (75% Max HP damage)
+                OtherCombat->Health = FMath::Max(0.f, OtherCombat->Health - (OtherCombat->MaxHealth * 0.75f));
+                if (OtherCombat->Health <= 0.f)
+                {
+                    OtherCombat->SetState(ECommittedCombatState::Defeated);
+                }
+                else
+                {
+                    OtherCombat->Stagger(1.5f);
+                }
+            }
             else
             {
-                // Wall or Pillar slam
-                OtherCombat->Health = FMath::Max(0.f, OtherCombat->Health - (OtherCombat->MaxHealth * 0.75f));
+                // Wall slam (70% Max HP damage)
+                OtherCombat->Health = FMath::Max(0.f, OtherCombat->Health - (OtherCombat->MaxHealth * 0.70f));
                 if (OtherCombat->Health <= 0.f)
                 {
                     OtherCombat->SetState(ECommittedCombatState::Defeated);
@@ -577,6 +621,15 @@ bool UCommittedCombatComponent::TryDedicatedGrab(EGrabTargetPart TargetPart)
             OtherCombat->GrabbedByOpponent = this;
             OtherCombat->SetState(ECommittedCombatState::Grabbed);
             OtherCombat->GrabTimer = DedicatedHoldDuration;
+
+            // Apply minor 0.35s hesitation to nearby crowd
+            if (GetWorld() && GetWorld()->GetAuthGameMode())
+            {
+                if (UCommittedCrowdDirectorComponent* Director = GetWorld()->GetAuthGameMode()->FindComponentByClass<UCommittedCrowdDirectorComponent>())
+                {
+                    Director->TriggerGlobalHesitation(0.35f);
+                }
+            }
 
             AddPosture(10.f); // initial grab leverage
             return true;

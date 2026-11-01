@@ -48,7 +48,7 @@ public:
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="COMMITTED|Combat|Flow", meta=(ClampMin="1.0"))
     float MaxFlow = 100.f;
 
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="COMMITTED|Combat")
+    UPROPERTY(BlueprintReadOnly, Category="COMMITTED|Combat")
     float PostBreakGraceTimer = 0.f;
 
     UPROPERTY(BlueprintReadOnly, Category="COMMITTED|Combat|Flow")
@@ -58,7 +58,7 @@ public:
     float FlowGainRate = 12.f;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="COMMITTED|Combat|Flow")
-    float FlowDecayRate = 6.f;
+    float FlowDecayRate = 15.f;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="COMMITTED|Combat|Flow")
     float FlowDecayDelay = 3.0f;
@@ -160,6 +160,8 @@ private:
     float GrabTimer = 0.f;
     int32 ConsecutiveDeflects = 0;
     float ConsecutiveDeflectResetTimer = 0.f;
+    FVector LastDeflectedOpponentLocation = FVector::ZeroVector;
+    TWeakObjectPtr<AActor> LastDeflectedOpponentActor;
 
     void SetState(ECommittedCombatState NewState);
     void EnterActive();
