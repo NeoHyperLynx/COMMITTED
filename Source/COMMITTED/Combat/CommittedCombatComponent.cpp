@@ -93,6 +93,12 @@ void UCommittedCombatComponent::TickComponent(float DeltaTime, ELevelTick TickTy
         }
     }
 
+    // Posture break grace period timer
+    if (PostBreakGraceTimer > 0.f)
+    {
+        PostBreakGraceTimer -= DeltaTime;
+    }
+
     // Periodic environmental surface scan
     ScanEnvironmentalSurfaces(200.f);
 }
@@ -105,12 +111,16 @@ void UCommittedCombatComponent::SetState(ECommittedCombatState NewState)
 
 void UCommittedCombatComponent::AddPosture(float Amount)
 {
-    Posture = FMath::Clamp(Posture + Amount, 0.f, MaxPosture);
+    const float Cap = (PostBreakGraceTimer > 0.f) ? (MaxPosture - 0.1f) : MaxPosture;
+    Posture = FMath::Clamp(Posture + Amount, 0.f, Cap);
     PostureRegenTimer = PostureRegenDelay;
 
     if (Posture >= MaxPosture && State != ECommittedCombatState::PostureBroken && State != ECommittedCombatState::Defeated)
     {
-        EnterPostureBroken();
+        if (PostBreakGraceTimer <= 0.f)
+        {
+            EnterPostureBroken();
+        }
     }
 }
 
@@ -144,6 +154,10 @@ void UCommittedCombatComponent::RecoverFromPostureBroken()
         const bool bIsPlayer = (OwnerActor && OwnerActor == PlayerChar);
 
         Posture = MaxPosture * (bIsPlayer ? 0.60f : 0.70f);
+        if (bIsPlayer)
+        {
+            PostBreakGraceTimer = 1.20f; // 1.20s grace period preventing instant re-break
+        }
         EnterReady();
     }
 }

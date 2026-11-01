@@ -48,6 +48,9 @@ public:
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="COMMITTED|Combat|Flow", meta=(ClampMin="1.0"))
     float MaxFlow = 100.f;
 
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="COMMITTED|Combat")
+    float PostBreakGraceTimer = 0.f;
+
     UPROPERTY(BlueprintReadOnly, Category="COMMITTED|Combat|Flow")
     float Flow = 0.f;
 

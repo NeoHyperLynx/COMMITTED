@@ -5,6 +5,23 @@ The image stored in `Docs/Images/reference/Kumite_Roster_Moodboard.jpg` is an AI
 
 For the production vertical slice, the game defines **15 real, documented martial arts traditions**, each thoroughly researched with verified mechanical profiles and distinct cultural lineages.
 
+### Historical Verification of the 15 Traditions:
+1. **Muay Thai** (Thailand): Ancient 8-limbs combat system utilizing fists, elbows, knees, and shins with devastating clinch dominance.
+2. **Karate / Shotokan** (Japan): Rooted linear striking emphasizing hip rotation, decisive reverse punches (gyaku-zuki), and strong posture integrity.
+3. **Taekwondo** (Korea): Renowned high-velocity kicking discipline with 540 spinning acrobatics and long-range engagement.
+4. **Cuban Boxing** (Cuba): Premier amateur pugilism school characterized by pendulum footwork, angle shifts, and reactive counter-punching.
+5. **Judo** (Japan): Classical grappling discipline developed by Jigoro Kano based on leverage, balance disruption (kuzushi), and explosive shoulder/hip throws.
+6. **Laamb** (Senegal): Historic West African folk wrestling combining intense bare-knuckle pugilism with clinch throws and sweep takedowns.
+7. **Combat Sambo** (Eastern Europe / Central Asia): Soviet-developed military grappling system combining judo throws with aggressive joint locks and grounded control.
+8. **Arnis / Kali / Eskrima** (Philippines): Indigenous weapon system utilizing rattan sticks and bladed weapons with fluid triangular footwork and deflection angles.
+9. **Tahtib** (Egypt): Ancient Nile Valley martial art performed with heavy hardwood staffs, focusing on circular momentum, blocks, and tip strikes.
+10. **Nguni Stick Fighting** (Southern Africa): Historic Zulu and Xhosa stick-and-shield tradition featuring close-range defensive parries and decisive staff strikes.
+11. **Khridoli** (Georgia): Ancient Caucasian martial tradition integrating staff, sabre combat, and hand-to-hand pugilism.
+12. **Capoeira** (Brazil): Afro-Brazilian martial art disguise-danced through ginga rhythm, sweeping ground sweeps, and inverted acrobatics.
+13. **Savate** (France): Classical French boxing utilizing shoe-tip precision kicks, fluid evasions, and rhythmic counter-striking.
+14. **Wing Chun** (China): Southern Chinese martial art focused on invariant centerline control, simultaneous parry-and-strike flow, and rapid-fire chain punches.
+15. **Pencak Silat** (Indonesia / Malaysia): Southeast Asian martial art system specializing in Harimau low-ground tiger sweeps, angular joint locks, and flow state transitions.
+
 ---
 
 ## 2. Four Core Exchange Identities
