@@ -100,6 +100,8 @@ private:
     void DoLimbStrike();
     void DoCommittedStrike();
     void DoReversal();
+    void DoEnvironmentalTakedown();
+    void DoGrab();
 
     void UpdateDynamicCamera(float DeltaSeconds);
 };

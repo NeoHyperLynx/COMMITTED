@@ -172,7 +172,7 @@ void ACommittedFighterCharacter::RefreshPrototypeLabel(ECommittedCombatState New
         bPrototypeRivalAI ? TEXT("RIVAL") : TEXT("YOU"), Combat->Health, *StateName, *MoveStatus)));
 
     const FColor Base = bPrototypeRivalAI ? FColor(255, 95, 65) : FColor(65, 220, 255);
-    PrototypeLabel->SetTextRenderColor(NewState == ECommittedCombatState::Reversal ? FColor::Green :
+    PrototypeLabel->SetTextRenderColor(NewState == ECommittedCombatState::Deflect ? FColor::Green :
         NewState == ECommittedCombatState::Startup ? FColor::Yellow :
         NewState == ECommittedCombatState::Defeated ? FColor::Red : Base);
 }
@@ -294,7 +294,19 @@ void ACommittedFighterCharacter::DoLightAttack()
 
 void ACommittedFighterCharacter::DoLimbStrike() { Combat->StartAttack(LimbStrike); }
 void ACommittedFighterCharacter::DoCommittedStrike() { Combat->StartAttack(CommittedStrike); }
-void ACommittedFighterCharacter::DoReversal() { Combat->StartReversal(); }
+void ACommittedFighterCharacter::DoReversal() { Combat->StartDeflect(); }
+void ACommittedFighterCharacter::DoEnvironmentalTakedown() { Combat->TryEnvironmentalTakedown(); }
+void ACommittedFighterCharacter::DoGrab()
+{
+    if (Combat->GrabbedOpponent.IsValid())
+    {
+        Combat->TryGrabThrow(GetActorForwardVector());
+    }
+    else
+    {
+        Combat->TryDedicatedGrab(EGrabTargetPart::Head);
+    }
+}
 
 void ACommittedFighterCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
@@ -318,6 +330,8 @@ void ACommittedFighterCharacter::SetupPlayerInputComponent(UInputComponent* Play
     PlayerInputComponent->BindAction(TEXT("LimbStrike"), IE_Pressed, this, &ACommittedFighterCharacter::DoLimbStrike);
     PlayerInputComponent->BindAction(TEXT("CommittedStrike"), IE_Pressed, this, &ACommittedFighterCharacter::DoCommittedStrike);
     PlayerInputComponent->BindAction(TEXT("Reversal"), IE_Pressed, this, &ACommittedFighterCharacter::DoReversal);
+    PlayerInputComponent->BindAction(TEXT("EnvironmentalTakedown"), IE_Pressed, this, &ACommittedFighterCharacter::DoEnvironmentalTakedown);
+    PlayerInputComponent->BindAction(TEXT("Grab"), IE_Pressed, this, &ACommittedFighterCharacter::DoGrab);
 }
 
 void ACommittedFighterCharacter::UpdateDynamicCamera(float DeltaSeconds)
@@ -397,10 +411,10 @@ void ACommittedFighterCharacter::Tick(float DeltaSeconds)
     {
         if (PlayerCombat->State == ECommittedCombatState::Startup)
         {
-            // 50% chance to reverse, 50% chance to flash dash backwards
+            // 50% chance to deflect, 50% chance to flash dash backwards
             if (FMath::RandBool())
             {
-                Combat->StartReversal();
+                Combat->StartDeflect();
             }
             else if (CommittedMovement)
             {
