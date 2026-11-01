@@ -34,15 +34,27 @@ void ACommittedPrototypeHUD::DrawHUD()
             DrawText(FString::Printf(TEXT("FLOW: %.0f / %.0f"), Fighter->Combat->Flow, Fighter->Combat->MaxFlow),
                 Gold, 28.f, 170.f, nullptr, 1.15f);
 
-            // Environmental Takedown Context Prompt
+            // Environmental Takedown & Grab Chain Prompts
             if (Fighter->Combat->NearbyEnvironmentalSurface != EEnvironmentalSurfaceType::None)
             {
                 FString SurfName = TEXT("WALL");
                 if (Fighter->Combat->NearbyEnvironmentalSurface == EEnvironmentalSurfaceType::Pillar) SurfName = TEXT("PILLAR");
                 else if (Fighter->Combat->NearbyEnvironmentalSurface == EEnvironmentalSurfaceType::Ledge) SurfName = TEXT("LEDGE / CHASM");
 
-                DrawText(FString::Printf(TEXT("[F] ENVIRONMENTAL TAKEDOWN READY (%s)"), *SurfName),
-                    Green, 28.f, 202.f, nullptr, 1.25f);
+                if (Fighter->Combat->GrabbedOpponent.IsValid())
+                {
+                    DrawText(FString::Printf(TEXT("[F] ENVIRONMENTAL GRAB-SLAM (%s)"), *SurfName),
+                        Green, 28.f, 202.f, nullptr, 1.25f);
+                }
+                else
+                {
+                    DrawText(FString::Printf(TEXT("[F] ENVIRONMENTAL TAKEDOWN READY (%s)"), *SurfName),
+                        Green, 28.f, 202.f, nullptr, 1.25f);
+                }
+            }
+            else if (Fighter->Combat->GrabbedOpponent.IsValid())
+            {
+                DrawText(TEXT("[G + DIR] THROW ENEMY INTO HAZARD"), Gold, 28.f, 202.f, nullptr, 1.25f);
             }
 
             if (const UCommittedMovementComponent* Mov = Fighter->CommittedMovement)

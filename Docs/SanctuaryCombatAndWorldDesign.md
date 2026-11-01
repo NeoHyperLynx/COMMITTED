@@ -6,52 +6,56 @@ This document details the combat architecture, mechanical tables, AI director st
 
 ## 1. Posture & Flow System Specifications
 
-### 1.1 Dual-Meter Mechanics
-The combat system separates structural integrity (**Posture**) from offensive rhythm and momentum (**Flow**).
+### 1.1 Definitions and System Separation
+**Posture** and **Flow** serve distinct, complementary roles in combat:
 
-- **Posture (Range: 0 – 100)**:
-  - Measures defensive guard integrity and structural balance.
-  - At **0 Posture**, fighter is stable.
-  - As attacks are guarded or received, Posture rises toward **100**.
-  - At **100 Posture**, the fighter experiences **Posture Break**:
-    - **Enemy Break**: Enters a 2.0s vulnerable Stun state with white-hot outline, susceptible to lethal critical strikes or 2m Environmental Takedowns.
-    - **Player Break**: Complete guard collapse, 1.4s staggered recovery where incoming attacks deal 1.75× damage and cannot be parried or dodged.
-  - **Posture Regeneration**:
-    - Begins after a 1.2s delay without taking hits or guarding.
-    - Base regen rate: **18 points/sec**.
-    - If health is below 50%, regen drops by 50% (**9 points/sec**).
-    - Holding Guard increases Posture regen rate by 2.2× when unthreatened.
+- **Posture (Defensive Integrity & Structural Balance)**:
+  - **What it does**: Posture represents structural stability and guard poise. Guarding attacks or mistiming deflects accumulates posture damage toward 100. Posture breaking a target bypasses normal health attrition and creates immediate lethal vulnerability (environmental takedowns, critical finish strikes).
+  - **Presence in Duels vs. 1vN**: **Both player and enemies possess Posture in all combat modes (1v1 Duels and 1vN Scrimmages)**. In duels, Posture is the primary victory condition (Sekiro-style rhythm exchanges), where breaking the rival's posture ends the duel.
 
-- **Flow (Range: 0 – 100)**:
-  - Offensive kinetic meter built through clean hits (+12 Flow), timed deflects (+18 Flow), and fluid parkour transitions (+8 Flow).
-  - Decays by 6 Flow/sec after 3.0s of disengagement.
-  - **Flow Milestones**:
-    - **Flow Tier 1 (30+)**: Unlocks Flash Dash canceling out of any recovery frame without spending stamina.
-    - **Flow Tier 2 (70+)**: Attacks gain +25% posture damage against guarding opponents; deflect timing window gains +0.03s leniency.
-    - **Flow Tier 3 (100 - Surge)**: Activates *Phantom State* for 6s: attacks cannot be interrupted by light enemy strikes; environmental takedowns instantly grant full dash charges and restore 20% health.
+- **Flow (Offensive Kinetic Momentum & Martial Rhythm)**:
+  - **What it does**: Flow represents the fighter's martial momentum, focus, and tempo. Flow is gained purely through proactive execution: landing clean strikes (+12), timing perfect deflects (+18), and executing fluid parkour/wall runs (+8). Flow spends or unlocks high-tier martial perks: instant dash-canceling out of recovery animations (Tier 1: 30+), bonus guard penetration (Tier 2: 70+), and Phantom State surge (Tier 3: 100).
+  - **Presence in Duels vs. 1vN**: **Both player and enemies possess Flow in all combat modes**. In 1vN, Flow allows the player to continuously reposition and burst through crowds without stamina constraints. In 1v1 duels, maintaining high Flow prevents the boss from resetting neutral and allows the player to cancel committed whiff recoveries into immediate defensive deflects.
 
-### 1.2 Deflect Windows & Multipliers
-- **Perfect Deflect Window**: **0.14 seconds** (starts upon pressing Reversal/Deflect `E`).
-  - Enemy attack interrupted, attacker receives **24 Posture damage** + **18 Flow** to player.
-  - Multi-hit string deflect combo: Consecutive deflects multiply attacker posture damage by 1.25× up to a 2.5× cap.
-- **Imperfect Guard / Block Window**: **0.15s – 0.40s**.
-  - Attack blocked (no health damage), but defender absorbs **15 Posture damage**.
-- **Deflect Whiff Penalty**: Missed deflect attempt triggers a **0.32s recovery lockout** where attacks cannot be deflected.
+### 1.2 Player Posture Break Consequence
+When the player's Posture reaches 100, the player's guard suffers a catastrophic collapse. The player enters a **1.40-second helpless stagger state** accompanied by a distinct audio-visual guard shatter. During this 1.40s window:
+1. All incoming attacks deal **1.75× unmitigated damage** directly to Health.
+2. Deflect (`E`), Flash Dash (`Alt`), and attacks are **hard-locked** (cannot be triggered or buffered until 0.20s before the stagger ends).
+3. Movement speed is reduced by **70%**.
+4. Secondary flanker enemies gain immediate clearance from the Crowd Director to execute a coordinated punish strike.
+5. Upon recovering, the player's Posture resets to **60 points** (preventing an instant re-break loop while keeping the player in immediate danger until they regain neutral spacing).
+
+### 1.3 Deflect Multiplier Formula
+The posture damage inflicted upon an attacking opponent during a successful deflect string scales deterministically according to the following formula:
+
+$$\text{PostureDamage} = \text{BasePostureDamage} \times \min\left(1.0 + (\text{ConsecutiveDeflectCount} - 1) \times 0.25, \; 2.50\right)$$
+
+Where:
+- $\text{BasePostureDamage} = 24.0$ points.
+- $\text{ConsecutiveDeflectCount}$ starts at $1$ and increments with each consecutive deflect executed within $0.80\text{s}$ of the previous deflect without receiving damage, missing a deflect input, or disengaging.
+- The multiplier steps are:
+  - Hit 1: $1.00\times \implies 24.0$ posture damage.
+  - Hit 2: $1.25\times \implies 30.0$ posture damage.
+  - Hit 3: $1.50\times \implies 36.0$ posture damage.
+  - Hit 4: $1.75\times \implies 42.0$ posture damage.
+  - Hit 5: $2.00\times \implies 48.0$ posture damage.
+  - Hit 7+: capped at $2.50\times \implies 60.0$ posture damage.
 
 ---
 
-## 2. Environmental Takedowns Decision Table
+## 2. Environmental Prompts & Grab-to-Environmental Chain Table
 
-Environmental interactions blend **Urban Reign**'s dedicated grab with head/body target selection and **Sleeping Dogs / Path of Neo** cinematic environmental lethality.
+When an enemy is in a vulnerable state (either **Posture Broken** or **Grabbed**), environmental geometry within range can be leveraged for cinematic, high-impact takedowns.
 
-### 2.1 Environmental Takedown Decision Matrix
+### 2.1 Environmental Prompt Disambiguation & Grab Chain Resolution Table
 
-| Input | Trigger Condition | Overlapping Priority Order | Window Duration | Follow-up Guarantee | Interruption Rules |
+| Situation / State | Spatial Condition | Prompt Displayed & Input | Disambiguation / Priority Rule | Guaranteed Execution Outcome | Interruption & i-Frame Rules |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| **Contextual Interact (`F` / `Alt`)** | Target Posture Broken (100) **AND** within 2.0m of Wall, Pillar, or Ledge. | 1. **Ledge / Chasm** (Instant Ejection)<br>2. **Torii / Pillar** (Structural Splat)<br>3. **Wall** (Wall Slam & Stun) | **2.0s** vulnerability window before enemy recovers 30% posture | Guarantees instant defeat (Ledge) or 75% max HP damage + Wall Splat Stumble | **Invulnerable i-frames** during the execution animation (0.85s). Other enemies freeze their swing until completion. |
-| **Dedicated Grab Tap (`G` / `Gamepad LB`)** | Target not posture broken, distance < 1.8m, defender not in active attack frame. | 1. **Head Grab** (Frontal approach / high input)<br>2. **Body / Limb Lock** (Flank/rear or neutral input) | Hold lasts up to **1.8s** before target breaks free | Opens target to knee strike, limb break, or throw into adjacent hazard | Enemy can tech-escape if player takes external hit; player has 40% damage reduction while holding. |
-| **Dedicated Grab Hold + Direction (`G` + Direction)** | In Grab hold state within 2.5m of obstacle or ledge. | 1. Directional thrown target into obstacle (Wall Splat)<br>2. Directional toss off cliff | Continuous while held | Wall Splat leaves enemy in grounded prone state for 2.0s | Broken if hit by heavy unblockable strike from secondary enemy. |
-| **No Prompt / Default** | Distance > 2.0m OR Posture not broken OR Grab not initiated | N/A | None | Standard melee strikes | Standard combat collision rules apply. |
+| **Enemy Posture Broken (100 Posture)** | Multiple surfaces within 2.0m radius | **`[F] Environmental Takedown`** (Contextual) | 1. **Ledge / Chasm**: If character faces within $\pm 60^\circ$ of a drop-off $>3\text{m}$.<br>2. **Pillar / Torii Post**: If a cylinder prop is within $1.8\text{m}$.<br>3. **Wall**: Nearest flat surface collision normal. | • **Ledge**: Instant lethal drop ejection.<br>• **Pillar**: 75% Max HP damage + Wall Splat Stumble.<br>• **Wall**: 70% Max HP damage + Grounded Knockdown. | **Full Invulnerability (0.85s i-frames)**. All crowd attack tokens pause and surrounding enemies freeze swings until animation ends. |
+| **Neutral / Active Enemy (Posture < 100)** | Target within 1.8m, not posture broken | **`[G] Dedicated Grab`** (Head / Body lock) | If holding Forward (`W`): **Head Grab**.<br>If Neutral or Sideways (`A`/`D`/`S`): **Body / Limb Lock**. | Target immobilized in grab hold for up to **1.80s**. Player has 40% damage resistance during hold. | Soft interruption: Player taking a heavy attack breaks grab. Minion light strikes do not break grab. |
+| **Grab Held → Directed toward Hazard** | In Grab hold + Directional Input held | **`[G] + Direction`** (Throw into Hazard) | Checks line-of-sight in throw direction within 2.5m: Ledge > Pillar > Wall > Open Floor Throw. | Target launched into surface: Wall Splat inflicts 35% HP damage and 2.0s grounded prone state. | Thrown enemy becomes an active collision projectile, staggering any secondary flankers hit in flight. |
+| **Grab Held → Within 2.0m of Hazard** | Target Grabbed AND within 2.0m of surface | **`[F] Environmental Slam`** (Grab Chain) | Overrides normal grab hold. Prioritizes surface directly behind or to the flank of the grabbed victim. | Chains directly from grab into environmental smash (head slam on pillar or torso slam on wall) for 50% HP damage. | Seamless transition into execution i-frames (0.85s). |
+| **No Surface in 2.0m Range** | Distance to any surface $> 2.0\text{m}$ | **`[G] Throw`** OR Standard Strikes | No environmental prompt displayed. Grab can only execute open-ground knee strike or forward throw. | Launches enemy 9m forward across open floor into neutral recovery. | Standard vulnerability. |
 
 ---
 
@@ -62,13 +66,13 @@ The AI director manages 1vN encounters to avoid chaotic dogpiling while maintain
 ### 3.1 Token System State Machine
 - **Maximum Concurrent Attackers**:
   - Normal Combat: **2 Attack Tokens** active simultaneously (1 Melee Aggressor, 1 Flanker/Prober).
-  - Boss Encountes: **1 Boss Token** (Boss has full token priority; minions act purely as stage distractors).
+  - Boss Encounters: **1 Boss Token** (Boss has full token priority; minions act purely as stage distractors).
 - **Token Acquisition**:
   - Eligible enemies within 8m request a token every 0.4s.
   - Distance, line-of-sight, and readiness score determine token assignment.
 - **Token Release**:
   - Released immediately when an attack finishes recovery, target is deflected, or attacker is staggered/knocked down.
-  - If player performs an environmental takedown or deflects an attack, non-attacking enemies enter a **0.6s hesitate state**.
+  - If player performs an environmental takedown or deflects an attack, non-attacking enemies enter a **0.65s hesitate state**.
 - **Parry-Interruption Policy**:
   - When the player executes a perfect deflect, all incoming secondary attacks within a 2.5m radius are soft-parried with an acoustic shockwave, giving the player space for the counter-followup.
 

@@ -103,15 +103,25 @@ void UCommittedCombatComponent::EnterPostureBroken()
     GetWorld()->GetTimerManager().ClearTimer(PhaseTimer);
     SetState(ECommittedCombatState::PostureBroken);
 
-    // 2.0s vulnerability window
-    GetWorld()->GetTimerManager().SetTimer(PhaseTimer, this, &UCommittedCombatComponent::RecoverFromPostureBroken, 2.0f, false);
+    // If owner is player, apply 1.4s player break duration; enemies receive 2.0s vulnerability
+    AActor* OwnerActor = GetOwner();
+    ACharacter* PlayerChar = UGameplayStatics::GetPlayerCharacter(this, 0);
+    const bool bIsPlayer = (OwnerActor && OwnerActor == PlayerChar);
+
+    const float BreakDuration = bIsPlayer ? 1.40f : 2.0f;
+    GetWorld()->GetTimerManager().SetTimer(PhaseTimer, this, &UCommittedCombatComponent::RecoverFromPostureBroken, BreakDuration, false);
 }
 
 void UCommittedCombatComponent::RecoverFromPostureBroken()
 {
     if (State == ECommittedCombatState::PostureBroken)
     {
-        Posture = MaxPosture * 0.7f; // recovers with 70% posture
+        // Player recovers with 60 posture; enemies recover with 70
+        AActor* OwnerActor = GetOwner();
+        ACharacter* PlayerChar = UGameplayStatics::GetPlayerCharacter(this, 0);
+        const bool bIsPlayer = (OwnerActor && OwnerActor == PlayerChar);
+
+        Posture = MaxPosture * (bIsPlayer ? 0.60f : 0.70f);
         EnterReady();
     }
 }
@@ -232,7 +242,11 @@ void UCommittedCombatComponent::ReceiveAttack(UCommittedCombatComponent* Attacke
         ImpairedLimbs.AddUnique(Attack.TargetLimb);
     }
 
-    const float DamageDealt = Attack.bLethal ? Health : Attack.Damage;
+    float DamageDealt = Attack.bLethal ? Health : Attack.Damage;
+    if (State == ECommittedCombatState::PostureBroken)
+    {
+        DamageDealt *= 1.75f; // 1.75x unmitigated damage during posture break
+    }
     Health = FMath::Max(0.f, Health - DamageDealt);
 
     AddPosture(Attack.PostureDamage);
@@ -256,7 +270,7 @@ void UCommittedCombatComponent::DeflectAttacker(UCommittedCombatComponent* Attac
     ConsecutiveDeflects++;
     const float Multiplier = FMath::Clamp(1.f + (ConsecutiveDeflects - 1) * 0.25f, 1.f, 2.5f);
 
-    // Inflict posture damage on attacker
+    // Inflict posture damage on attacker using exact formula: 24.0 * Multiplier
     Attacker->AddPosture(24.f * Multiplier);
     AddFlow(18.f);
 
@@ -327,13 +341,39 @@ bool UCommittedCombatComponent::ScanEnvironmentalSurfaces(float MaxRadius)
 
 bool UCommittedCombatComponent::TryEnvironmentalTakedown()
 {
-    if (State != ECommittedCombatState::Ready) return false;
     if (NearbyEnvironmentalSurface == EEnvironmentalSurfaceType::None) return false;
 
     AActor* OwnerActor = GetOwner();
     if (!OwnerActor || !GetWorld()) return false;
 
-    // Search for posture-broken enemy within 2.0m (200 units)
+    // 1. Check if holding a grabbed opponent for a Grab -> Environmental Chain
+    if (GrabbedOpponent.IsValid())
+    {
+        UCommittedCombatComponent* TargetCombat = GrabbedOpponent.Get();
+        SetState(ECommittedCombatState::PerformingTakedown);
+        OnEnvironmentalTakedown.Broadcast(NearbyEnvironmentalSurface, TargetCombat->GetOwner());
+
+        // Grab-chain slam inflicts 50% max HP damage
+        TargetCombat->Health = FMath::Max(0.f, TargetCombat->Health - (TargetCombat->MaxHealth * 0.50f));
+        if (TargetCombat->Health <= 0.f)
+        {
+            TargetCombat->SetState(ECommittedCombatState::Defeated);
+        }
+        else
+        {
+            TargetCombat->Stagger(1.5f);
+        }
+
+        BreakGrab();
+        AddFlow(25.f);
+
+        GetWorld()->GetTimerManager().SetTimer(PhaseTimer, this, &UCommittedCombatComponent::EnterReady, 0.85f, false);
+        return true;
+    }
+
+    // 2. Check for Posture Broken opponent within 2.0m (200 units)
+    if (State != ECommittedCombatState::Ready) return false;
+
     TArray<AActor*> Fighters;
     UGameplayStatics::GetAllActorsOfClass(GetWorld(), ACharacter::StaticClass(), Fighters);
 
